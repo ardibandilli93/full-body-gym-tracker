@@ -1,0 +1,8 @@
+{
+  "name": "full-body-gym-tracker",
+  "private": true,
+  "scripts": {
+    "assets": "node scripts/download-exercise-gifs.mjs",
+    "build": "node scripts/download-exercise-gifs.mjs"
+  }
+}
