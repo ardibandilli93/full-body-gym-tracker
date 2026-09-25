@@ -33,7 +33,7 @@ async function exists(path) {
 await mkdir(resolve("assets/exercises"), { recursive: true });
 let ok = 0;
 for (const [id, url] of Object.entries(files)) {
-  const dest = resolve(`assets/exercises/${id}.gif`);
+  const dest = resolve(`public/assets/exercises/${id}.gif`);
   if (await exists(dest)) { console.log(`✓ ${id} already exists`); ok++; continue; }
   console.log(`↓ ${id}`);
   const response = await fetch(url, { headers: { "User-Agent": "full-body-gym-tracker-build" } });

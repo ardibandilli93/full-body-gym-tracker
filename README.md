@@ -1,27 +1,25 @@
 # Full Body Gym Tracker
 
-Mobile-first 3-day full-body workout tracker. Workout history, weights, reps and weekly reports are stored in each visitor's browser with localStorage.
+A React workout journal for the existing three-day full-body routine. Set logs stay on the device until Supabase is configured. Signed-in users can sync workouts across devices.
 
-## Real exercise GIFs
-
-This version removes the generated stick-figure animations. The app uses real animated exercise demonstrations from the MIT-licensed [mohamedatef90/exercise-library](https://github.com/mohamedatef90/exercise-library).
-
-There are **22 mapped GIFs**. On a Git-connected Netlify deployment the build command downloads them into `assets/exercises/` automatically:
+## Run locally
 
 ```bash
-npm run build
+npm install
+npm run dev
 ```
 
-You can run the same command locally before committing if you want the binary GIF files stored in GitHub itself.
+To package the 22 exercise demonstration GIFs locally, run `npm run assets`. Until then the app uses the Exercise Library remote GIFs as a fallback.
 
-The HTML also contains the public raw GitHub URL for each exercise as a fallback. So if an asset is missing, the exercise demo still appears while online instead of showing a blank panel.
+## Enable Supabase
 
-## Deploy to Netlify
+1. Create a Supabase project and run [`supabase/schema.sql`](supabase/schema.sql) in its SQL editor.
+2. Copy `.env.example` to `.env.local` and fill in the project URL and **publishable** key. Never put a secret or service role key in the client.
+3. In Supabase Auth URL configuration, add the app's local and production URLs to the redirect allow list. Email OTP sign in must be enabled.
+4. Restart the dev server. Sign in by email. Existing browser workout data can be imported with **Import workouts from this browser** after sign in.
 
-For Git deployment, Netlify reads `netlify.toml`, runs `node scripts/download-exercise-gifs.mjs`, then publishes the project root.
+The app retains compatibility with the prior local history key and backup JSON format. Each account's cached history has a separate browser key. RLS restricts cloud rows to their owner.
 
-For a manual drag-and-drop deployment, run `npm run build` first so the `assets/exercises/*.gif` files exist locally, then drag the complete folder into Netlify.
+## Deploy
 
-## Data privacy
-
-No account or backend is required. Each visitor's workout logs remain in that browser/device. Export/import can be used to move history between devices.
+Netlify builds the Vite app with `npm run build` and publishes `dist`. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as Netlify environment variables to enable cloud sync.
