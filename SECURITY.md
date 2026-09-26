@@ -32,7 +32,7 @@ Scope: application source and dependencies, live Supabase project
 
 ## Verification
 
-- `npm audit --json`: zero reported advisories at review time.
+- `npm audit`: zero reported advisories after the account and hCaptcha update.
 - `npm test`: malicious data, size limits, prototype keys, valid legacy shapes
   and persistent-cache recovery tests pass.
 - Production build passes; deliberately supplying a fake `sb_secret_` key fails
@@ -43,7 +43,7 @@ Scope: application source and dependencies, live Supabase project
   inside a rolled-back transaction; existing workouts are not modified.
 - Supabase security advisor: no findings after the migration.
 - Browser smoke test under the production CSP: workout inputs, totals, completion,
-  animation and demonstration work without CSP errors. The browser file-import
+  animation, account page, hCaptcha widget and demonstration work without CSP errors. The browser file-import
   end-to-end check was blocked by the extension's file-URL permission; the import
   parser itself is covered by automated tests.
 - Public `.env.local` and `.git/config` paths returned the SPA HTML fallback,
@@ -69,6 +69,5 @@ Scope: application source and dependencies, live Supabase project
   No load testing, real-email abuse testing or new email-login round trip was
   performed.
 
-The database migration is applied live. Frontend protections take effect only
-after Netlify deploys this revision. When changing Supabase projects, update the
+The database migration and frontend protections are live on Netlify. When changing Supabase projects, update the
 exact `connect-src` origin in `netlify.toml` as well as environment variables.
