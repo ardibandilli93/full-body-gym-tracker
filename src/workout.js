@@ -1,4 +1,5 @@
 import routine from './routine.json' with { type: 'json' };
+import { validateHistory, MAX_BACKUP_BYTES } from './validation.js';
 
 export const exercises = routine.exercises;
 export const plan = routine.plan;
@@ -28,7 +29,7 @@ export function weekStats(history, key) {
 }
 export const format = (value, digits = 0) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: digits });
 export function readHistory(key) {
-  try { const data = JSON.parse(localStorage.getItem(key) || '{}'); return data && typeof data === 'object' && !Array.isArray(data) ? data : {}; } catch { return {}; }
+  try { const raw = localStorage.getItem(key) || '{}'; if (raw.length > MAX_BACKUP_BYTES) return {}; return validateHistory(JSON.parse(raw), { skipInvalid: true }); } catch { return {}; }
 }
 export function updateHistory(history, date, change) {
   const day = structuredClone(history[date] || { session: scheduledSession(date), exercises: {} });

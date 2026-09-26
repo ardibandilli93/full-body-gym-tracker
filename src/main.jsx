@@ -4,6 +4,7 @@ import { ProgressMotion } from './ProgressMotion';
 import { supabase, loadCloudHistory, saveCloudDay, deleteCloudDay } from './supabase';
 import { addDays, dateKey, emptySets, exerciseById, exerciseWeekVolume, format, guestHistoryKey, hasWorkout, legacyHistoryKey, parseDate, plan, prettyDate, previousExercise, readHistory, scheduledSession, sessionExercises, sessionFor, totalVolume, updateHistory, userHistoryKey, volume, weekStats } from './workout';
 import './style.css';
+import { readBackup, validateHistory } from './validation.js';
 
 const today = dateKey(new Date());
 const guestInitial = () => { const current = readHistory(guestHistoryKey); return Object.keys(current).length ? current : readHistory(legacyHistoryKey); };
@@ -41,9 +42,9 @@ function ExerciseCard({ exercise, index, session, state, previous, onChange }) {
         {difference !== null && <div className={`comparison ${difference > 0 ? 'positive' : ''}`}>{difference > 0 ? '+' : ''}{difference}% training volume vs last time</div>}
         <p className="logging-hint">Log each set below · {sets.length} sets</p>
         <div className="set-grid set-labels"><span>SET</span><span>WEIGHT · KG</span><span>REPS</span><span>DONE</span></div>
-        {sets.map((set, setIndex) => <div className="set-grid set-line" key={setIndex}><span className="set-index">{String(setIndex + 1).padStart(2, '0')}</span><input aria-label={`${exercise.name} set ${setIndex + 1} weight in kilograms`} inputMode="decimal" type="number" min="0" max="9999" step="0.5" placeholder="0" value={set.weight} onChange={event => patch(sets.map((item, i) => i === setIndex ? { ...item, weight: event.target.value } : item))}/><input aria-label={`${exercise.name} set ${setIndex + 1} reps`} inputMode="numeric" type="number" min="0" max="999" step="1" placeholder="0" value={set.reps} onChange={event => patch(sets.map((item, i) => i === setIndex ? { ...item, reps: event.target.value } : item))}/><button type="button" className={`done-button ${set.done ? 'done' : ''}`} aria-label={`${set.done ? 'Unmark' : 'Mark'} ${exercise.name} set ${setIndex + 1} done`} aria-pressed={!!set.done} onClick={() => patch(sets.map((item, i) => i === setIndex ? { ...item, done: !item.done } : item))}>{set.done ? '✓' : '○'}</button></div>)}
+        {sets.map((set, setIndex) => <div className="set-grid set-line" key={setIndex}><span className="set-index">{String(setIndex + 1).padStart(2, '0')}</span><input aria-label={`${exercise.name} set ${setIndex + 1} weight in kilograms`} inputMode="decimal" type="number" min="0" max="9999" step="0.5" placeholder="0" value={set.weight} onChange={event => patch(sets.map((item, i) => i === setIndex ? { ...item, weight: event.target.value === '' ? '' : String(Math.min(9999, Math.max(0, Number(event.target.value)))) } : item))}/><input aria-label={`${exercise.name} set ${setIndex + 1} reps`} inputMode="numeric" type="number" min="0" max="999" step="1" placeholder="0" value={set.reps} onChange={event => patch(sets.map((item, i) => i === setIndex ? { ...item, reps: event.target.value === '' ? '' : String(Math.min(999, Math.max(0, Number(event.target.value)))) } : item))}/><button type="button" className={`done-button ${set.done ? 'done' : ''}`} aria-label={`${set.done ? 'Unmark' : 'Mark'} ${exercise.name} set ${setIndex + 1} done`} aria-pressed={!!set.done} onClick={() => patch(sets.map((item, i) => i === setIndex ? { ...item, done: !item.done } : item))}>{set.done ? '✓' : '○'}</button></div>)}
         <div className="exercise-actions"><button disabled={sets.length >= 12} onClick={() => sets.length < 12 && patch([...sets, { weight: '', reps: '', done: false }])}>+ Add set</button>{sets.length > 1 && <button onClick={() => patch(sets.slice(0, -1))}>Remove last</button>}{previous && <button onClick={() => patch(previous.state.sets.map(set => ({ ...set, done: false })))}>Copy last</button>}</div>
-        <label className="note-label">Notes<input value={state?.notes || ''} onChange={event => onChange({ sets, notes: event.target.value })} placeholder="How did it feel?" /></label>
+        <label className="note-label">Notes<input maxLength={2000} value={state?.notes || ''} onChange={event => onChange({ sets, notes: event.target.value })} placeholder="How did it feel?" /></label>
         <details><summary>How to do it</summary><p>{exercise.instructions}</p></details>
       </div>
     </div>
@@ -99,7 +100,10 @@ function App() {
         for (const [date, local] of Object.entries(latestLocal)) if (!cloud[date] || (local.updatedAt || '') > (cloud[date].updatedAt || '')) merged[date] = local;
         replaceHistory(merged, userHistoryKey(nextUser.id));
         setSync('Synced to Supabase');
-        await Promise.all(Object.entries(merged).filter(([date, item]) => !cloud[date] || item === latestLocal[date]).map(([date, item]) => saveCloudDay(nextUser.id, date, item)));
+        for (const [date, item] of Object.entries(merged)) {
+          if (!active || request !== requestRef.current) return;
+          if (!cloud[date] || item === latestLocal[date]) await saveCloudDay(nextUser.id, date, item);
+        }
       } catch (error) { if (active) setSync(`Sync failed: ${error.message}`); }
     }
     supabase.auth.getSession().then(({ data }) => { if (active) connect(data.session); });
@@ -109,15 +113,39 @@ function App() {
 
   const importGuest = async () => {
     if (!user) return;
+    const request = requestRef.current;
     const guest = guestInitial();
     const additions = Object.entries(guest).filter(([date]) => !historyRef.current[date]);
     if (!additions.length) return message('All browser workouts already exist in your account');
     const merged = { ...historyRef.current, ...Object.fromEntries(additions) };
     replaceHistory(merged, userHistoryKey(user.id));
-    try { await Promise.all(additions.map(([date, item]) => saveCloudDay(user.id, date, item))); setSync('Synced to Supabase'); message(`${additions.length} workout days imported`); } catch (error) { setSync(`Sync failed: ${error.message}`); }
+    try {
+      for (const [date, item] of additions) {
+        if (request !== requestRef.current) return;
+        await saveCloudDay(user.id, date, item);
+      }
+      if (request !== requestRef.current) return;
+      setSync('Synced to Supabase'); message(`${additions.length} workout days imported`);
+    } catch (error) { if (request === requestRef.current) setSync(`Sync failed: ${error.message}`); }
   };
   const exportData = () => { const blob = new Blob([JSON.stringify({ app: '3-day-full-body-gym-tracker', version: 3, history }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `workouts-${today}.json`; a.click(); URL.revokeObjectURL(url); };
-  const importData = async file => { try { const data = JSON.parse(await file.text()); if (data.app !== '3-day-full-body-gym-tracker' || !data.history || typeof data.history !== 'object' || Array.isArray(data.history) || !Object.entries(data.history).every(([date, day]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && day && typeof day === 'object' && !Array.isArray(day) && (!day.exercises || (typeof day.exercises === 'object' && !Array.isArray(day.exercises) && Object.values(day.exercises).every(ex => ex && typeof ex === 'object' && (!ex.sets || Array.isArray(ex.sets))))))) throw Error('Invalid workout backup'); const next = { ...historyRef.current, ...data.history }; replaceHistory(next, key); if (user) await Promise.all(Object.entries(data.history).map(([date, item]) => saveCloudDay(user.id, date, item))); message('Backup imported'); } catch (error) { message(error.message); } };
+  const importData = async file => {
+    const request = requestRef.current;
+    try {
+      const imported = await readBackup(file);
+      if (request !== requestRef.current) throw new Error('Account changed. Please import again.');
+      const next = validateHistory({ ...historyRef.current, ...imported });
+      replaceHistory(next, key);
+      if (user) {
+        // Bound concurrency: a backup must not launch thousands of requests at once.
+        for (const [date, item] of Object.entries(imported)) {
+          if (request !== requestRef.current) return;
+          await saveCloudDay(user.id, date, item);
+        }
+      }
+      if (request === requestRef.current) message('Backup imported');
+    } catch (error) { message(error.message); }
+  };
   const copyPreviousDay = () => { if (!previousDay || (hasWorkout(historyRef.current[selected]) && !window.confirm('Replace the current workout with the previous session?'))) return; changeDay(day => { for (const exercise of exercises) { const previous = historyRef.current[previousDay].exercises?.[exercise.id]; if (previous) day.exercises[exercise.id] = { ...structuredClone(previous), sets: previous.sets.map(set => ({ ...set, done: false })) }; } }); message(`Copied ${prettyDate(previousDay)}`); };
   const clearDay = async () => { if (!window.confirm(`Clear ${prettyDate(selected)}?`)) return; const next = { ...historyRef.current }; delete next[selected]; replaceHistory(next, key); if (user) { try { syncQueue.current = syncQueue.current.catch(() => {}).then(() => deleteCloudDay(user.id, selected)); await syncQueue.current; setSync('Synced to Supabase'); } catch (error) { setSync(`Sync failed: ${error.message}`); } } message('Day cleared'); };
   return <div className="app-shell">

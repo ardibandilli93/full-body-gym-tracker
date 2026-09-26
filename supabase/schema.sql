@@ -3,14 +3,15 @@ create table if not exists public.workout_days (
   user_id uuid not null references auth.users(id) on delete cascade,
   workout_date date not null,
   session text not null default '' check (session in ('', 'A', 'B', 'C')),
-  exercises jsonb not null default '{}'::jsonb,
+  exercises jsonb not null default '{}'::jsonb constraint workout_days_payload_check check (jsonb_typeof(exercises) = 'object' and octet_length(exercises::text) <= 65536),
   updated_at timestamptz not null default now(),
-  primary key (user_id, workout_date)
+  primary key (user_id, workout_date),
+  constraint workout_days_date_check check (workout_date between date '1900-01-01' and date '2200-12-31')
 );
 
 alter table public.workout_days enable row level security;
 
-revoke all on public.workout_days from anon;
+revoke all on public.workout_days from public, anon, authenticated;
 grant select, insert, update, delete on public.workout_days to authenticated;
 
 create policy "Users read their own workout days"
