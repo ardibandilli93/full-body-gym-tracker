@@ -270,7 +270,7 @@ export function WorkoutScene() {
   }, [reduced, failed]);
 
   return <div className="motion-frame workout-scene" aria-label="Animated 3D male and female athletes doing squats and dumbbell presses">
-    {reduced || failed ? <img src="/assets/training/poster.jpg" alt="Male and female athletes training together" /> : <div className="workout-canvas" ref={mount} />}
+    {reduced || failed ? <img src="/assets/training/poster-gym.jpg" alt="Male and female athletes training together" /> : <div className="workout-canvas" ref={mount} />}
     {!reduced && !failed && <button type="button" className="film-toggle" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Play animation' : 'Pause animation'}>{paused ? '▶' : 'Ⅱ'}</button>}
     <span className="scene-label">FULL BODY · SQUAT + PRESS</span>
   </div>;
