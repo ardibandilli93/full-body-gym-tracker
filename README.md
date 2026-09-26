@@ -25,4 +25,4 @@ The app retains compatibility with the prior local history key and backup JSON f
 
 Netlify builds the Vite app with `npm run build` and publishes `dist`. Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_HCAPTCHA_SITE_KEY` as Netlify environment variables to enable cloud sync and the account CAPTCHA. The current public hCaptcha site key is also compiled as a fallback.
 
-The hero uses a pre-rendered video for smooth playback. Its source frames are in `art/training`; `scripts/render-training-video.sh` rebuilds `public/assets/training/duo.mp4` and its poster with ffmpeg.
+The hero uses an articulated Three.js scene: the woman squats and the man presses dumbbells. The scene loads only when needed, caps rendering resolution and frame rate, pauses when offscreen, and shows a still for people who prefer reduced motion or cannot use WebGL. `public/assets/training/poster.jpg` is its still image.

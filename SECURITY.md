@@ -21,7 +21,8 @@ Scope: application source and dependencies, live Supabase project
   passed these constraints before deployment.
 - **Browser hardening:** add CSP with no inline/evaluated JavaScript, framing
   denial, nosniff, no-referrer and restrictive permissions headers. Inline CSS
-  remains allowed for React and hCaptcha. The hero now uses a pre-rendered video.
+  remains allowed for React and hCaptcha. The hero now uses a local Three.js
+  scene with no remote 3D assets.
 - **Account CAPTCHA client:** email/password sign-in and registration use
   hCaptcha's React widget and pass its token to Supabase Auth. The public site
   key is safe in client code; server-side token verification needs the secret
