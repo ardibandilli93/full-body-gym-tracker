@@ -1,99 +1,79 @@
 import { useEffect, useRef, useState } from 'react';
 
-const W = 640;
-const H = 400;
+const W = 1000;
+const H = 520;
+const LOOP = 22;
 const ASSETS = {
-  womanSquat: '/assets/training/pixel/woman-squat.webp',
   womanWalk: '/assets/training/pixel/woman-walk.webp',
-  manPress: '/assets/training/pixel/man-press.webp',
   manWalk: '/assets/training/pixel/man-walk.webp',
+  womanSquat: '/assets/training/pixel/woman-squat.webp',
+  manPress: '/assets/training/pixel/man-press.webp',
+  pressSquat: '/assets/training/pixel/press-squat.png',
+  pushups: '/assets/training/pixel/pushups.png',
 };
 
-const smooth = n => n * n * (3 - 2 * n);
+const smooth = value => value * value * (3 - 2 * value);
+const between = (time, start, end) => smooth(Math.max(0, Math.min(1, (time - start) / (end - start))));
+const mix = (start, end, value) => start + (end - start) * value;
 
 function drawStage(ctx, seconds, sprites) {
-  const phase = seconds % 15;
-  const entering = phase < 2.2;
-  const leaving = phase > 11;
-  const travel = entering ? smooth(phase / 2.2) : leaving ? smooth((phase - 11) / 4) : 0;
-  const womanX = entering ? 720 - 520 * travel : leaving ? 200 - 460 * travel : 200;
-  const manX = entering ? 900 - 466 * travel : leaving ? 434 - 510 * travel : 434;
-  const exercise = !entering && !leaving;
-  const floorY = 353;
+  const time = seconds % LOOP;
+  const walkToPress = time < 2.5;
+  const press = time >= 2.5 && time < 6.3;
+  const walkToSquat = time >= 6.3 && time < 8.7;
+  const squat = time >= 8.7 && time < 12.5;
+  const walkToPushup = time >= 12.5 && time < 15;
+  const pushup = time >= 15 && time < 19;
+  const exit = time >= 19;
+
+  let center = 340;
+  let feet = 416;
+  if (walkToPress) center = mix(210, 340, between(time, 0, 2.5));
+  if (walkToSquat) center = mix(340, 610, between(time, 6.3, 8.7));
+  if (squat) center = 610;
+  if (walkToPushup) {
+    const step = between(time, 12.5, 15);
+    center = mix(610, 760, step);
+    feet = mix(416, 490, step);
+  }
+  if (pushup) { center = 760; feet = 490; }
+  if (exit) { center = mix(760, 1230, between(time, 19, LOOP)); feet = 490; }
 
   ctx.fillStyle = '#0a0d10';
   ctx.fillRect(0, 0, W, H);
-  const glow = ctx.createRadialGradient(340, 285, 22, 340, 285, 340);
-  glow.addColorStop(0, '#15302c');
-  glow.addColorStop(0.48, '#102020');
-  glow.addColorStop(1, '#0a0d10');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
-
-  // The receding floor moves under the athletes without putting them in a boxed room.
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 278, W, H - 278);
-  ctx.clip();
-  const horizon = 280;
-  const vp = 332 + Math.sin(seconds * 0.15) * 12;
-  for (let x = -580; x < 1200; x += 83) {
-    ctx.strokeStyle = x % 2 ? '#34695677' : '#367c8277';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(vp + (x - vp) * 0.02, horizon);
-    ctx.lineTo(x, H);
-    ctx.stroke();
-  }
-  for (let i = 0; i < 9; i++) {
-    const depth = ((i + seconds * 0.55) % 9) / 9;
-    const y = horizon + Math.pow(depth, 1.9) * 120;
-    ctx.strokeStyle = `rgba(105, 217, 157, ${0.09 + depth * 0.2})`;
-    ctx.beginPath();
-    ctx.moveTo(0, Math.round(y) + 0.5);
-    ctx.lineTo(W, Math.round(y) + 0.5);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  const sprite = (image, frame, x, feet, height) => {
-    const fw = image.width / 4;
-    const dw = height * fw / image.height;
-    ctx.drawImage(image, frame * fw, 0, fw, image.height,
-      Math.round(x - dw / 2), Math.round(feet - height), Math.round(dw), Math.round(height));
-  };
-  const shadow = (x, radius, color) => {
-    const gradient = ctx.createRadialGradient(x, floorY + 1, 2, x, floorY + 1, radius);
-    gradient.addColorStop(0, color);
-    gradient.addColorStop(1, '#0a0d1000');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.ellipse(x, floorY + 1, radius, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-  };
   ctx.imageSmoothingEnabled = false;
-  shadow(womanX, 88, '#bbfb674f');
-  shadow(manX, 95, '#75cfff49');
 
-  const walkFrame = Math.floor(seconds * 7) % 4;
-  const womanFrame = Math.floor((seconds - 2.2) * 3.1) % 4;
-  const manFrame = Math.floor((seconds - 2.2) * 3.1 + 1) % 4;
-  sprite(exercise ? sprites.womanSquat : sprites.womanWalk,
-    exercise ? womanFrame : walkFrame, womanX, floorY, 282);
-  sprite(exercise ? sprites.manPress : sprites.manWalk,
-    exercise ? manFrame : walkFrame, manX, floorY + 4, 289);
+  const draw = (image, frame, x, bottom, height, row = 0, rows = 1, split = null) => {
+    const frameWidth = image.width / 4;
+    const rowStart = split ? (row ? split : 0) : row * image.height / rows;
+    const rowHeight = split ? (row ? image.height - split : split) : image.height / rows;
+    const width = height * frameWidth / rowHeight;
+    ctx.drawImage(image, frame * frameWidth, rowStart, frameWidth, rowHeight,
+      Math.round(x - width / 2), Math.round(bottom - height), Math.round(width), Math.round(height));
+  };
 
-  ctx.fillStyle = '#aef479';
-  ctx.font = 'bold 11px monospace';
-  ctx.textBaseline = 'top';
-  ctx.fillText('01  FULL BODY', 22, 20);
-  ctx.fillStyle = '#77998c';
-  ctx.font = '10px monospace';
-  ctx.fillText('SQUAT / PRESS / MOVE', 22, 37);
-  ctx.fillStyle = '#92f18c';
-  ctx.fillRect(22, 58, 28 + (phase / 15) * 118, 2);
-  ctx.fillStyle = '#33564b';
-  ctx.fillRect(50 + (phase / 15) * 118, 58, 118 * (1 - phase / 15), 2);
+  const womanX = center - 116;
+  const manX = center + 116;
+  if (pushup) {
+    const frame = Math.floor((time - 15) * 3.1) % 4;
+    draw(sprites.pushups, frame, womanX, feet, 180, 0, 2, 420);
+    draw(sprites.pushups, frame, manX, feet + 2, 176, 1, 2, 420);
+    return;
+  }
+
+  if (press) {
+    const frame = Math.floor((time - 2.5) * 3.1) % 4;
+    draw(sprites.pressSquat, frame, womanX, feet, 310, 0, 2, 550);
+    draw(sprites.manPress, frame, manX, feet + 2, 314);
+  } else if (squat) {
+    const frame = Math.floor((time - 8.7) * 3.1) % 4;
+    draw(sprites.womanSquat, frame, womanX, feet, 306);
+    draw(sprites.pressSquat, frame, manX, feet + 2, 310, 1, 2, 550);
+  } else {
+    const frame = Math.floor(seconds * 7) % 4;
+    draw(sprites.womanWalk, frame, womanX, feet, 304);
+    draw(sprites.manWalk, frame, manX, feet + 2, 310);
+  }
 }
 
 export function WorkoutScene() {
@@ -112,7 +92,6 @@ export function WorkoutScene() {
   }, []);
 
   useEffect(() => {
-    if (reduced) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d', { alpha: false });
     if (!ctx) return;
@@ -133,6 +112,8 @@ export function WorkoutScene() {
       if (canceled) return;
       const sprites = Object.fromEntries(entries);
       setReady(true);
+      drawStage(ctx, reduced ? 3.2 : 0, sprites);
+      if (reduced) return;
       const tick = now => {
         if (canceled) return;
         frame = requestAnimationFrame(tick);
@@ -142,15 +123,14 @@ export function WorkoutScene() {
         last = now;
         drawStage(ctx, elapsed, sprites);
       };
-      drawStage(ctx, 0, sprites);
       frame = requestAnimationFrame(tick);
-    }).catch(() => { /* The poster remains visible if assets cannot load. */ });
+    }).catch(() => { /* Keep the black backdrop if an asset cannot load. */ });
 
     return () => { canceled = true; cancelAnimationFrame(frame); observer.disconnect(); };
   }, [reduced]);
 
-  return <div className="arcade-stage" role="group" aria-label="Pixel-art woman squatting and man pressing dumbbells, walking through a perspective workout stage">
-    {!reduced && <canvas ref={canvasRef} width={W} height={H} className={ready ? 'is-ready' : ''} aria-hidden="true" />}
+  return <div className="arcade-stage" role="group" aria-label="Pixel-art athletes walking across the scene, pressing dumbbells, squatting, and doing push-ups">
+    <canvas ref={canvasRef} width={W} height={H} className={ready ? 'is-ready' : ''} aria-hidden="true" />
     {!reduced && ready && <button type="button" className="arcade-toggle" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Play animation' : 'Pause animation'}>{paused ? '▶' : 'Ⅱ'}</button>}
   </div>;
 }
