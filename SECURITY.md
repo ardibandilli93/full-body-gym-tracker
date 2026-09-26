@@ -21,7 +21,11 @@ Scope: application source and dependencies, live Supabase project
   passed these constraints before deployment.
 - **Browser hardening:** add CSP with no inline/evaluated JavaScript, framing
   denial, nosniff, no-referrer and restrictive permissions headers. Inline CSS
-  remains allowed for React/Remotion. Use Lottie's expression-free light build.
+  remains allowed for React and hCaptcha. The hero now uses a pre-rendered video.
+- **Account CAPTCHA client:** email/password sign-in and registration use
+  hCaptcha's React widget and pass its token to Supabase Auth. The public site
+  key is safe in client code; server-side token verification needs the secret
+  configured in Supabase Authentication → Attack Protection.
 - **Client safeguards:** refuse builds configured with secret/legacy keys,
   ignore environment files in Git, bound bulk synchronization concurrency and
   stop imports when the account changes during file reading/synchronization.
@@ -49,10 +53,11 @@ Scope: application source and dependencies, live Supabase project
 
 ## Remaining limits
 
-- CAPTCHA is disabled in Supabase. Rate limits do not fully prevent distributed
-  sign-in/email abuse. Configure a CAPTCHA provider, add its widget/token to the
-  sign-in form, then enable server-side CAPTCHA enforcement together. Enabling
-  it in the dashboard alone would break sign-in.
+- CAPTCHA is not yet enabled in Supabase. The widget alone does not enforce
+  anything server-side. Add the hCaptcha **secret** directly in Supabase
+  Authentication → Attack Protection and enable CAPTCHA protection; never
+  place that secret in frontend environment variables. Rate limits remain
+  enabled, but do not fully prevent distributed sign-in/email abuse.
 - Row size limits are not per-account storage quotas or API rate limits. Monitor
   usage and billing; for stronger resource-abuse protection, use enforced
   per-account quotas and a rate-limited write service. Client limits alone are
