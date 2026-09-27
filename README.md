@@ -26,4 +26,4 @@ The app retains compatibility with the prior local history key and backup JSON f
 
 Netlify builds the Vite app with `npm run build` and publishes `dist`. Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_HCAPTCHA_SITE_KEY` as Netlify environment variables to enable cloud sync and the account CAPTCHA. The current public hCaptcha site key is also compiled as a fallback.
 
-The hero uses original, locally hosted pixel-art sprites. Two athletes walk across a moving perspective floor, then perform squats and dumbbell presses. The canvas runs only while visible, caps its frame rate, and has a still-image fallback for reduced motion or asset-loading failures. No third-party video is embedded.
+The hero uses locally hosted athlete sprite sheets for side, front, rear, and turning views. The athletes walk a closed path across a perspective floor, turn toward the viewer for dumbbell presses and squats, then walk away and return. The canvas renders at up to 60 frames per second while visible and shows a still pose for reduced-motion preferences. No third-party video is embedded.
