@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 
 // A site key is public. Keep the hCaptcha secret only in Supabase Auth settings.
 const sitekey = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '01344326-ddda-4d34-8238-03d0bc1e9ede';
-const confirmationRedirect = 'https://fullbodygym.netlify.app/sign-in';
+const confirmationRedirect = 'https://fullbodygym.netlify.app/';
 
 export function AuthPage({ initialMode = 'login', onClose, onSignedIn }) {
   const [mode, setMode] = useState(initialMode);
@@ -43,7 +43,7 @@ export function AuthPage({ initialMode = 'login', onClose, onSignedIn }) {
         : await supabase.auth.signInWithPassword({ ...credentials, options: captchaToken ? { captchaToken } : undefined });
       if (result.error) throw result.error;
       if (result.data.session) onSignedIn();
-      else setNotice('Check your inbox to confirm your email. Then come back and sign in.');
+      else setNotice('Check your inbox to confirm your email. The link will open your training dashboard.');
     } catch (failure) {
       setError(failure.message || 'Something went wrong. Please try again.');
     } finally {

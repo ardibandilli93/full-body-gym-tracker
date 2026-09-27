@@ -29,7 +29,23 @@ export function validateDay(date, day) {
   }
   const exercises = day.exercises ?? {};
   safeKeys(exercises);
+  const completion = day.completion ?? exercises._completion;
+  if (completion !== undefined) {
+    safeKeys(completion);
+    const integer = (value, min, max) => Number.isInteger(value) && value >= min && value <= max;
+    if (typeof completion.finishedAt !== 'string' || completion.finishedAt.length > 40 || !Number.isFinite(Date.parse(completion.finishedAt)) ||
+      !integer(completion.minutes, 5, 300) || typeof completion.bodyWeightKg !== 'number' || !Number.isFinite(completion.bodyWeightKg) || completion.bodyWeightKg < 20 || completion.bodyWeightKg > 400 ||
+      !integer(completion.calories, 1, 7000) || !(completion.progressPct === null || integer(completion.progressPct, -100, 100)) ||
+      !(completion.comparedTo === null || typeof completion.comparedTo === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(completion.comparedTo) && completion.comparedTo < date) ||
+      !integer(completion.comparedExercises, 0, 20) || !integer(completion.completedSets, 1, 240)) fail();
+    result.completion = {
+      finishedAt: new Date(completion.finishedAt).toISOString(), minutes: completion.minutes, bodyWeightKg: completion.bodyWeightKg,
+      calories: completion.calories, progressPct: completion.progressPct, comparedTo: completion.comparedTo,
+      comparedExercises: completion.comparedExercises, completedSets: completion.completedSets,
+    };
+  }
   for (const [id, state] of Object.entries(exercises)) {
+    if (id === '_completion') continue;
     if (!ids.has(id)) fail();
     safeKeys(state);
     const notes = state.notes ?? '';

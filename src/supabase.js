@@ -15,7 +15,8 @@ export async function loadCloudHistory(userId) {
 
 export async function saveCloudDay(userId, date, day) {
   day = validateDay(date, day);
-  const { error } = await supabase.from('workout_days').upsert({ user_id: userId, workout_date: date, session: day.session || '', exercises: day.exercises || {}, updated_at: day.updatedAt || new Date().toISOString() }, { onConflict: 'user_id,workout_date' });
+  const exercises = day.completion ? { ...day.exercises, _completion: day.completion } : day.exercises || {};
+  const { error } = await supabase.from('workout_days').upsert({ user_id: userId, workout_date: date, session: day.session || '', exercises, updated_at: day.updatedAt || new Date().toISOString() }, { onConflict: 'user_id,workout_date' });
   if (error) throw error;
 }
 

@@ -2,40 +2,24 @@ import { useEffect, useRef, useState } from 'react';
 
 const W = 1000;
 const H = 520;
-const LOOP = 13.4;
+const EXERCISE_SECONDS = 3.4;
+const WATER_SECONDS = 2.6;
+const LOOP = EXERCISE_SECONDS * 3 + WATER_SECONDS;
+const EXERCISES = ['SHOULDER PRESS', 'SQUATS', 'SQUAT TO PRESS'];
 const ASSETS = {
-  womanWalk: '/assets/training/pixel/woman-walk.webp',
-  manWalk: '/assets/training/pixel/man-walk.webp',
-  womanBack: '/assets/training/pixel/woman-walk-back.webp',
-  manBack: '/assets/training/pixel/man-walk-back.webp',
-  womanTurn: '/assets/training/pixel/woman-turn.webp',
-  manTurn: '/assets/training/pixel/man-turn.webp',
   womanSquat: '/assets/training/pixel/woman-squat.webp',
   manPress: '/assets/training/pixel/man-press.webp',
   pressSquat: '/assets/training/pixel/press-squat.png',
 };
 
-const smooth = value => value * value * (3 - 2 * value);
-const between = (time, start, end) => smooth(Math.max(0, Math.min(1, (time - start) / (end - start))));
-const mix = (start, end, value) => start + (end - start) * value;
-
 function drawStage(ctx, seconds, sprites) {
   const time = seconds % LOOP;
-  const press = time >= 2.6 && time < 6;
-  const squat = time >= 9.2 && time < 12.6;
-
-  let center = 520;
-  let feet = 416;
-  if (time < 1.8) {
-    const step = between(time, 0, 1.8);
-    center = mix(520, 430, step);
-    feet = mix(416, 394, step);
-  } else if (time < 6.7) { center = 430; feet = 394; }
-  else if (time < 8.5) {
-    const step = between(time, 6.7, 8.5);
-    center = mix(430, 520, step);
-    feet = mix(394, 416, step);
-  }
+  const interval = Math.min(3, Math.floor(time / EXERCISE_SECONDS));
+  const progress = interval === 3 ? (time - EXERCISE_SECONDS * 3) / WATER_SECONDS : (time % EXERCISE_SECONDS) / EXERCISE_SECONDS;
+  const frame = Math.floor(time * 2.8) % 4;
+  const feet = 394;
+  const womanX = 404;
+  const manX = 636;
 
   const backdrop = ctx.createLinearGradient(0, 0, 0, H);
   backdrop.addColorStop(0, '#080d10');
@@ -65,57 +49,90 @@ function drawStage(ctx, seconds, sprites) {
   }
   ctx.imageSmoothingEnabled = false;
 
-  const draw = (image, frame, x, bottom, height, row = 0, rows = 1, split = null) => {
+  const draw = (image, selectedFrame, x, bottom, height, row = 0, rows = 1, split = null) => {
     const frameWidth = image.width / 4;
     const rowStart = split ? (row ? split : 0) : row * image.height / rows;
     const rowHeight = split ? (row ? image.height - split : split) : image.height / rows;
     const width = height * frameWidth / rowHeight;
-    ctx.drawImage(image, frame * frameWidth, rowStart, frameWidth, rowHeight,
+    ctx.drawImage(image, selectedFrame * frameWidth, rowStart, frameWidth, rowHeight,
       Math.round(x - width / 2), Math.round(bottom - height), Math.round(width), Math.round(height));
   };
-
-  const womanX = center - 116;
-  const manX = center + 116;
-  const shadows = () => {
-    for (const [x, color] of [[womanX, '#a4e95e'], [manX, '#43b9dc']]) {
-      const shadow = ctx.createRadialGradient(x, feet + 5, 5, x, feet + 5, 100);
-      shadow.addColorStop(0, `${color}42`);
-      shadow.addColorStop(1, `${color}00`);
-      ctx.fillStyle = shadow;
-      ctx.beginPath();
-      ctx.ellipse(x, feet + 7, 105, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+  const drawPress = selectedFrame => {
+    draw(sprites.pressSquat, selectedFrame, womanX, feet, 310, 0, 2, 550);
+    draw(sprites.manPress, selectedFrame, manX, feet + 2, 314);
   };
-  shadows();
-  const drawWalk = (view, walkingTime) => {
-    const frame = Math.floor(walkingTime * 4.5) % 4;
-    const bob = Math.sin(walkingTime * Math.PI * 4.5) * 2;
-    const pair = view === 'back' ? [sprites.womanBack, sprites.manBack] : [sprites.womanWalk, sprites.manWalk];
-    draw(pair[0], frame, womanX, feet + bob, 304);
-    draw(pair[1], frame, manX, feet + bob + 2, 310);
-  };
-  const drawTurn = (start, end, first, last) => {
-    const frame = Math.round(mix(first, last, between(time, start, end)));
-    draw(sprites.womanTurn, frame, womanX, feet, 306);
-    draw(sprites.manTurn, frame, manX, feet + 2, 310);
+  const drawSquat = selectedFrame => {
+    draw(sprites.womanSquat, selectedFrame, womanX, feet, 306);
+    draw(sprites.pressSquat, selectedFrame, manX, feet + 2, 310, 1, 2, 550);
   };
 
-  if (time >= 1.8 && time < 2.6) return drawTurn(1.8, 2.6, 3, 0);
-  if (time >= 6 && time < 6.7) return drawTurn(6, 6.7, 0, 1);
-  if (time >= 8.5 && time < 9.2) return drawTurn(8.5, 9.2, 1, 0);
-  if (time >= 12.6) return drawTurn(12.6, LOOP, 0, 3);
+  for (const [x, color] of [[womanX, '#a4e95e'], [manX, '#43b9dc']]) {
+    const shadow = ctx.createRadialGradient(x, feet + 5, 5, x, feet + 5, 100);
+    shadow.addColorStop(0, `${color}42`);
+    shadow.addColorStop(1, `${color}00`);
+    ctx.fillStyle = shadow;
+    ctx.beginPath();
+    ctx.ellipse(x, feet + 7, 105, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-  if (press) {
-    const frame = Math.floor((time - 2.6) * 3.1) % 4;
-    draw(sprites.pressSquat, frame, womanX, feet, 310, 0, 2, 550);
-    draw(sprites.manPress, frame, manX, feet + 2, 314);
-  } else if (squat) {
-    const frame = Math.floor((time - 9.2) * 3.1) % 4;
-    draw(sprites.womanSquat, frame, womanX, feet, 306);
-    draw(sprites.pressSquat, frame, manX, feet + 2, 310, 1, 2, 550);
+  if (interval === 0) drawPress(frame);
+  else if (interval === 1) drawSquat(frame);
+  else if (interval === 2) {
+    // Alternate the two standing movements to make a squat-to-press sequence.
+    if (Math.floor((time - EXERCISE_SECONDS * 2) * 1.6) % 2 === 0) drawSquat(frame);
+    else drawPress(frame);
   } else {
-    drawWalk(time < 1.8 ? 'back' : 'side', time < 1.8 ? time : time - 6.7);
+    drawSquat(0);
+    const lift = Math.min(1, (time - EXERCISE_SECONDS * 3) / 0.45, (LOOP - time) / 0.45);
+    const sip = Math.sin((time - EXERCISE_SECONDS * 3) * 8) * 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#172127';
+    ctx.lineWidth = 17;
+    ctx.beginPath();
+    ctx.moveTo(manX - 24, feet - 223);
+    ctx.lineTo(manX + 10, feet - 245 + (1 - lift) * 70);
+    ctx.stroke();
+    ctx.strokeStyle = '#ce9068';
+    ctx.lineWidth = 12;
+    ctx.stroke();
+    const bottle = (x, y, handColor) => {
+      ctx.save();
+      ctx.translate(x, y + (1 - lift) * 70 + sip);
+      ctx.rotate(-0.28 - lift * 0.28);
+      ctx.fillStyle = '#091d25';
+      ctx.fillRect(-12, -22, 25, 45);
+      ctx.fillStyle = '#69c9db';
+      ctx.fillRect(-9, -18, 19, 37);
+      ctx.fillStyle = '#b5f2ec';
+      ctx.fillRect(-7, -15, 5, 30);
+      ctx.fillStyle = '#286f8b';
+      ctx.fillRect(-10, 3, 21, 16);
+      ctx.fillStyle = '#d9f7f0';
+      ctx.fillRect(-7, -27, 15, 7);
+      ctx.fillStyle = handColor;
+      ctx.fillRect(-14, 8, 8, 10);
+      ctx.restore();
+    };
+    bottle(womanX + 12, feet - 254, '#dfa273');
+    bottle(manX + 16, feet - 253, '#cf9065');
+  }
+
+  // Timed segments make the three exercises and water break visible at a glance.
+  ctx.fillStyle = '#d9f7ec';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(interval === 3 ? 'WATER BREAK' : EXERCISES[interval], 520, 54);
+  ctx.font = 'bold 12px sans-serif';
+  ctx.fillStyle = '#91aaa2';
+  ctx.fillText(interval === 3 ? 'DRINK WATER · THEN REPEAT' : `EXERCISE ${interval + 1} OF 3`, 520, 75);
+  const width = 83;
+  for (let i = 0; i < 4; i++) {
+    const x = 374 + i * 94;
+    ctx.fillStyle = '#254039';
+    ctx.fillRect(x, 88, width, 5);
+    ctx.fillStyle = i < interval ? '#c5fa82' : i === interval ? (interval === 3 ? '#67c9db' : '#c5fa82') : '#254039';
+    ctx.fillRect(x, 88, Math.round(width * (i === interval ? progress : i < interval ? 1 : 0)), 5);
   }
 }
 
@@ -152,7 +169,7 @@ export function WorkoutScene() {
       if (canceled) return;
       const sprites = Object.fromEntries(entries);
       setReady(true);
-      drawStage(ctx, reduced ? 3.2 : 0, sprites);
+      drawStage(ctx, 0, sprites);
       if (reduced) return;
       const tick = now => {
         if (canceled) return;
@@ -169,7 +186,7 @@ export function WorkoutScene() {
     return () => { canceled = true; cancelAnimationFrame(frame); observer.disconnect(); };
   }, [reduced]);
 
-  return <div className="arcade-stage" role="group" aria-label="Pixel-art athletes taking a few steps, turning to exercise, and repeating">
+  return <div className="arcade-stage" role="group" aria-label="Two pixel-art athletes exercise in place: shoulder presses, squats, and squat to press, then drink water before repeating">
     <canvas ref={canvasRef} width={W} height={H} className={ready ? 'is-ready' : ''} aria-hidden="true" />
   </div>;
 }
