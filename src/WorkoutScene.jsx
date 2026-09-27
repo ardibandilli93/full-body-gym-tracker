@@ -5,17 +5,17 @@ const H = 520;
 const EXERCISE_SECONDS = 3.4;
 const WATER_SECONDS = 2.6;
 const LOOP = EXERCISE_SECONDS * 3 + WATER_SECONDS;
-const EXERCISES = ['SHOULDER PRESS', 'SQUATS', 'SQUAT TO PRESS'];
 const ASSETS = {
   womanSquat: '/assets/training/pixel/woman-squat.webp',
   manPress: '/assets/training/pixel/man-press.webp',
   pressSquat: '/assets/training/pixel/press-squat.png',
+  pushups: '/assets/training/pixel/pushups.png',
+  water: '/assets/training/pixel/water-break.png',
 };
 
 function drawStage(ctx, seconds, sprites) {
   const time = seconds % LOOP;
   const interval = Math.min(3, Math.floor(time / EXERCISE_SECONDS));
-  const progress = interval === 3 ? (time - EXERCISE_SECONDS * 3) / WATER_SECONDS : (time % EXERCISE_SECONDS) / EXERCISE_SECONDS;
   const frame = Math.floor(time * 2.8) % 4;
   const feet = 394;
   const womanX = 404;
@@ -79,60 +79,13 @@ function drawStage(ctx, seconds, sprites) {
   if (interval === 0) drawPress(frame);
   else if (interval === 1) drawSquat(frame);
   else if (interval === 2) {
-    // Alternate the two standing movements to make a squat-to-press sequence.
-    if (Math.floor((time - EXERCISE_SECONDS * 2) * 1.6) % 2 === 0) drawSquat(frame);
-    else drawPress(frame);
+    draw(sprites.pushups, frame, womanX, feet, 180, 0, 2, 420);
+    draw(sprites.pushups, frame, manX, feet + 28, 175, 1, 2, 420);
   } else {
-    drawSquat(0);
-    const lift = Math.min(1, (time - EXERCISE_SECONDS * 3) / 0.45, (LOOP - time) / 0.45);
-    const sip = Math.sin((time - EXERCISE_SECONDS * 3) * 8) * 2;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#172127';
-    ctx.lineWidth = 17;
-    ctx.beginPath();
-    ctx.moveTo(manX - 24, feet - 223);
-    ctx.lineTo(manX + 10, feet - 245 + (1 - lift) * 70);
-    ctx.stroke();
-    ctx.strokeStyle = '#ce9068';
-    ctx.lineWidth = 12;
-    ctx.stroke();
-    const bottle = (x, y, handColor) => {
-      ctx.save();
-      ctx.translate(x, y + (1 - lift) * 70 + sip);
-      ctx.rotate(-0.28 - lift * 0.28);
-      ctx.fillStyle = '#091d25';
-      ctx.fillRect(-12, -22, 25, 45);
-      ctx.fillStyle = '#69c9db';
-      ctx.fillRect(-9, -18, 19, 37);
-      ctx.fillStyle = '#b5f2ec';
-      ctx.fillRect(-7, -15, 5, 30);
-      ctx.fillStyle = '#286f8b';
-      ctx.fillRect(-10, 3, 21, 16);
-      ctx.fillStyle = '#d9f7f0';
-      ctx.fillRect(-7, -27, 15, 7);
-      ctx.fillStyle = handColor;
-      ctx.fillRect(-14, 8, 8, 10);
-      ctx.restore();
-    };
-    bottle(womanX + 12, feet - 254, '#dfa273');
-    bottle(manX + 16, feet - 253, '#cf9065');
-  }
-
-  // Timed segments make the three exercises and water break visible at a glance.
-  ctx.fillStyle = '#d9f7ec';
-  ctx.font = 'bold 18px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(interval === 3 ? 'WATER BREAK' : EXERCISES[interval], 520, 54);
-  ctx.font = 'bold 12px sans-serif';
-  ctx.fillStyle = '#91aaa2';
-  ctx.fillText(interval === 3 ? 'DRINK WATER · THEN REPEAT' : `EXERCISE ${interval + 1} OF 3`, 520, 75);
-  const width = 83;
-  for (let i = 0; i < 4; i++) {
-    const x = 374 + i * 94;
-    ctx.fillStyle = '#254039';
-    ctx.fillRect(x, 88, width, 5);
-    ctx.fillStyle = i < interval ? '#c5fa82' : i === interval ? (interval === 3 ? '#67c9db' : '#c5fa82') : '#254039';
-    ctx.fillRect(x, 88, Math.round(width * (i === interval ? progress : i < interval ? 1 : 0)), 5);
+    const waterTime = time - EXERCISE_SECONDS * 3;
+    const waterFrame = waterTime < 0.4 ? 0 : waterTime < 0.9 ? 1 : waterTime < 1.8 ? 2 : waterTime < 2.2 ? 1 : 3;
+    draw(sprites.water, waterFrame, womanX, feet, 310, 0, 2);
+    draw(sprites.water, waterFrame, manX, feet + 2, 310, 1, 2);
   }
 }
 
@@ -186,7 +139,7 @@ export function WorkoutScene() {
     return () => { canceled = true; cancelAnimationFrame(frame); observer.disconnect(); };
   }, [reduced]);
 
-  return <div className="arcade-stage" role="group" aria-label="Two pixel-art athletes exercise in place: shoulder presses, squats, and squat to press, then drink water before repeating">
+  return <div className="arcade-stage" role="group" aria-label="Two pixel-art athletes exercise in place: shoulder presses, squats, and push-ups, then drink water before repeating">
     <canvas ref={canvasRef} width={W} height={H} className={ready ? 'is-ready' : ''} aria-hidden="true" />
   </div>;
 }
