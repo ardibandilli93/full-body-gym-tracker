@@ -54,7 +54,7 @@ export function AuthPage({ initialMode = 'login', onClose, onSignedIn }) {
   }
 
   return <div className="auth-page">
-    <header className="site-header auth-header"><a className="brand" href="#top" onClick={event => { event.preventDefault(); onClose(); }} aria-label="Full Body home"><span className="brand-mark">F<span>·</span>B</span><span>FULL BODY <small>TRAINING JOURNAL</small></span></a><button type="button" className="auth-back" onClick={onClose}>← Back to workouts</button></header>
+    <header className="site-header auth-header"><a className="brand" href="#top" onClick={event => { event.preventDefault(); onClose(); }} aria-label="Full Body home"><img className="brand-mark" src="/brand-mark.svg" width="44" height="44" alt="" /><span>FULL BODY <small>TRAINING JOURNAL</small></span></a><button type="button" className="auth-back" onClick={onClose}>← Back to workouts</button></header>
     <main className="auth-main">
       <div className="auth-art" aria-hidden="true"><img src="/assets/training/poster-gym.jpg" alt="" /><div><span className="eyebrow">TRAIN TOGETHER</span><strong>Your progress<br />goes with you.</strong><p>One account for every session, set and milestone.</p></div></div>
       <section className="auth-card" aria-labelledby="auth-title">
