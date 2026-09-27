@@ -9,6 +9,7 @@ import { readBackup, validateHistory } from './validation.js';
 
 const today = dateKey(new Date());
 const guestInitial = () => { const current = readHistory(guestHistoryKey); return Object.keys(current).length ? current : readHistory(legacyHistoryKey); };
+const authModeFromLocation = () => window.location.pathname === '/sign-in' ? 'login' : window.location.pathname === '/account' ? new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login' : null;
 
 function Calendar({ selected, onSelect, history }) {
   const [month, setMonth] = useState(() => new Date(parseDate(selected).getFullYear(), parseDate(selected).getMonth(), 1));
@@ -60,8 +61,8 @@ function AccountPanel({ user, onError, onSignIn, onSignUp }) {
 
 function App() {
   const [selected, setSelected] = useState(today);
-  const [authView, setAuthView] = useState(() => window.location.pathname === '/account' ? new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login' : null);
-  const openAuth = mode => { window.history.pushState({}, '', `/account?mode=${mode}`); setAuthView(mode); window.scrollTo(0, 0); };
+  const [authView, setAuthView] = useState(authModeFromLocation);
+  const openAuth = mode => { window.history.pushState({}, '', mode === 'login' ? '/sign-in' : '/account?mode=register'); setAuthView(mode); window.scrollTo(0, 0); };
   const closeAuth = () => { window.history.replaceState({}, '', '/'); setAuthView(null); };
   const [history, setHistory] = useState(guestInitial);
   const historyRef = useRef(history);
@@ -87,7 +88,7 @@ function App() {
   const changeExercise = (id, value) => changeDay(day => { day.exercises[id] = value; });
 
   useEffect(() => {
-    const onPopState = () => setAuthView(window.location.pathname === '/account' ? new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login' : null);
+    const onPopState = () => setAuthView(authModeFromLocation());
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);

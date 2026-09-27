@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 
 // A site key is public. Keep the hCaptcha secret only in Supabase Auth settings.
 const sitekey = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '01344326-ddda-4d34-8238-03d0bc1e9ede';
+const confirmationRedirect = 'https://fullbodygym.netlify.app/sign-in';
 
 export function AuthPage({ initialMode = 'login', onClose, onSignedIn }) {
   const [mode, setMode] = useState(initialMode);
@@ -19,7 +20,7 @@ export function AuthPage({ initialMode = 'login', onClose, onSignedIn }) {
 
   function switchMode(next) {
     setMode(next);
-    window.history.replaceState({}, '', `/account?mode=${next}`);
+    window.history.replaceState({}, '', next === 'login' ? '/sign-in' : '/account?mode=register');
     setNotice('');
     setError('');
     setPassword('');
@@ -38,7 +39,7 @@ export function AuthPage({ initialMode = 'login', onClose, onSignedIn }) {
       const address = email.trim().toLowerCase();
       const credentials = { email: address, password };
       const result = register
-        ? await supabase.auth.signUp({ ...credentials, options: { emailRedirectTo: window.location.origin, ...(captchaToken ? { captchaToken } : {}) } })
+        ? await supabase.auth.signUp({ ...credentials, options: { emailRedirectTo: confirmationRedirect, ...(captchaToken ? { captchaToken } : {}) } })
         : await supabase.auth.signInWithPassword({ ...credentials, options: captchaToken ? { captchaToken } : undefined });
       if (result.error) throw result.error;
       if (result.data.session) onSignedIn();

@@ -24,20 +24,25 @@ function drawStage(ctx, seconds, sprites) {
   const squat = time >= 8.7 && time < 12.5;
   const walkToPushup = time >= 12.5 && time < 15;
   const pushup = time >= 15 && time < 19;
-  const exit = time >= 19;
+  const returnToStart = time >= 19;
 
   let center = 340;
   let feet = 416;
-  if (walkToPress) center = mix(210, 340, between(time, 0, 2.5));
-  if (walkToSquat) center = mix(340, 610, between(time, 6.3, 8.7));
+  if (walkToPress) center = mix(340, 470, between(time, 0, 2.5));
+  if (press) center = 470;
+  if (walkToSquat) center = mix(470, 610, between(time, 6.3, 8.7));
   if (squat) center = 610;
   if (walkToPushup) {
     const step = between(time, 12.5, 15);
-    center = mix(610, 760, step);
+    center = mix(610, 500, step);
     feet = mix(416, 490, step);
   }
-  if (pushup) { center = 760; feet = 490; }
-  if (exit) { center = mix(760, 1230, between(time, 19, LOOP)); feet = 490; }
+  if (pushup) { center = 500; feet = 490; }
+  if (returnToStart) {
+    const step = between(time, 19, LOOP);
+    center = mix(500, 340, step);
+    feet = mix(490, 416, step);
+  }
 
   ctx.fillStyle = '#0a0d10';
   ctx.fillRect(0, 0, W, H);
@@ -78,12 +83,9 @@ function drawStage(ctx, seconds, sprites) {
 
 export function WorkoutScene() {
   const canvasRef = useRef(null);
-  const pausedRef = useRef(false);
-  const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-  useEffect(() => { pausedRef.current = paused; }, [paused]);
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => setReduced(query.matches);
@@ -117,7 +119,7 @@ export function WorkoutScene() {
       const tick = now => {
         if (canceled) return;
         frame = requestAnimationFrame(tick);
-        if (!visible || pausedRef.current) { last = now; return; }
+        if (!visible) { last = now; return; }
         if (now - last < 40) return;
         elapsed += Math.min((now - (last || now)) / 1000, 0.1);
         last = now;
@@ -129,8 +131,7 @@ export function WorkoutScene() {
     return () => { canceled = true; cancelAnimationFrame(frame); observer.disconnect(); };
   }, [reduced]);
 
-  return <div className="arcade-stage" role="group" aria-label="Pixel-art athletes walking across the scene, pressing dumbbells, squatting, and doing push-ups">
+  return <div className="arcade-stage" role="group" aria-label="Pixel-art athletes looping around the scene, pressing dumbbells, squatting, and doing push-ups">
     <canvas ref={canvasRef} width={W} height={H} className={ready ? 'is-ready' : ''} aria-hidden="true" />
-    {!reduced && ready && <button type="button" className="arcade-toggle" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Play animation' : 'Pause animation'}>{paused ? '▶' : 'Ⅱ'}</button>}
   </div>;
 }
