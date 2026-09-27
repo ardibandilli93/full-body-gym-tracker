@@ -18,66 +18,93 @@ const mix = (start, end, value) => start + (end - start) * value;
 
 function drawStage(ctx, seconds, sprites) {
   const time = seconds % LOOP;
-  const walkToPress = time < 2.5;
-  const press = time >= 2.5 && time < 6.3;
-  const walkToSquat = time >= 6.3 && time < 8.7;
-  const squat = time >= 8.7 && time < 12.5;
-  const walkToPushup = time >= 12.5 && time < 15;
-  const pushup = time >= 15 && time < 19;
-  const returnToStart = time >= 19;
+  const press = time >= 2.8 && time < 6;
+  const squat = time >= 9.4 && time < 12.4;
+  const pushup = time >= 15.6 && time < 19;
 
   let center = 340;
   let feet = 416;
-  if (walkToPress) center = mix(340, 470, between(time, 0, 2.5));
-  if (press) center = 470;
-  if (walkToSquat) center = mix(470, 610, between(time, 6.3, 8.7));
-  if (squat) center = 610;
-  if (walkToPushup) {
-    const step = between(time, 12.5, 15);
+  if (time < 2.2) center = mix(340, 470, between(time, 0, 2.2));
+  else if (time < 6.6) center = 470;
+  else if (time < 8.8) center = mix(470, 610, between(time, 6.6, 8.8));
+  else if (time < 13) center = 610;
+  else if (time < 15) {
+    const step = between(time, 13, 15);
     center = mix(610, 500, step);
     feet = mix(416, 490, step);
-  }
-  if (pushup) { center = 500; feet = 490; }
-  if (returnToStart) {
-    const step = between(time, 19, LOOP);
+  } else if (time < 19.6) { center = 500; feet = 490; }
+  else if (time < 21.4) {
+    const step = between(time, 19.6, 21.4);
     center = mix(500, 340, step);
     feet = mix(490, 416, step);
-  }
+  } else center = 340;
 
   ctx.fillStyle = '#0a0d10';
   ctx.fillRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = false;
 
-  const draw = (image, frame, x, bottom, height, row = 0, rows = 1, split = null) => {
+  const draw = (image, frame, x, bottom, height, row = 0, rows = 1, split = null, facing = 1, widthScale = 1) => {
     const frameWidth = image.width / 4;
     const rowStart = split ? (row ? split : 0) : row * image.height / rows;
     const rowHeight = split ? (row ? image.height - split : split) : image.height / rows;
-    const width = height * frameWidth / rowHeight;
+    const width = height * frameWidth / rowHeight * widthScale;
+    ctx.save();
+    ctx.translate(Math.round(x), 0);
+    ctx.scale(facing, 1);
     ctx.drawImage(image, frame * frameWidth, rowStart, frameWidth, rowHeight,
-      Math.round(x - width / 2), Math.round(bottom - height), Math.round(width), Math.round(height));
+      Math.round(-width / 2), Math.round(bottom - height), Math.round(width), Math.round(height));
+    ctx.restore();
   };
 
   const womanX = center - 116;
   const manX = center + 116;
+  const drawWalk = (direction, widthScale = 1, moving = true) => {
+    const frame = moving ? Math.floor(seconds * 7) % 4 : 1;
+    const facing = direction === 'left' ? -1 : 1;
+    draw(sprites.womanWalk, frame, womanX, feet, 304, 0, 1, null, facing, widthScale);
+    draw(sprites.manWalk, frame, manX, feet + 2, 310, 0, 1, null, facing, widthScale);
+  };
+  const drawFront = (widthScale = 1) => {
+    if (time < 6.6) draw(sprites.pressSquat, 0, womanX, feet, 310, 0, 2, 550, 1, widthScale);
+    else draw(sprites.womanSquat, 0, womanX, feet, 306, 0, 1, null, 1, widthScale);
+    draw(sprites.pressSquat, 0, manX, feet + 2, 310, 1, 2, 550, 1, widthScale);
+  };
+  const drawTurn = (from, to, start, end) => {
+    const progress = between(time, start, end);
+    const stage = progress < 0.5 ? from : to;
+    const widthScale = Math.max(0.35, Math.abs(progress - 0.5) * 2);
+    if (stage === 'front') drawFront(widthScale);
+    else drawWalk(stage, widthScale, false);
+  };
+
+  if (time >= 2.2 && time < 2.8) return drawTurn('right', 'front', 2.2, 2.8);
+  if (time >= 6 && time < 6.6) return drawTurn('front', 'right', 6, 6.6);
+  if (time >= 8.8 && time < 9.4) return drawTurn('right', 'front', 8.8, 9.4);
+  if (time >= 12.4 && time < 13) return drawTurn('front', 'left', 12.4, 13);
+  if (time >= 15 && time < 15.6) return drawTurn('left', 'front', 15, 15.6);
+  if (time >= 19 && time < 19.6) return drawTurn('front', 'left', 19, 19.6);
+  if (time >= 21.4) {
+    if (time < 21.7) return drawTurn('left', 'front', 21.4, 21.7);
+    return drawTurn('front', 'right', 21.7, LOOP);
+  }
+
   if (pushup) {
-    const frame = Math.floor((time - 15) * 3.1) % 4;
+    const frame = Math.floor((time - 15.6) * 3.1) % 4;
     draw(sprites.pushups, frame, womanX, feet, 180, 0, 2, 420);
     draw(sprites.pushups, frame, manX, feet + 2, 176, 1, 2, 420);
     return;
   }
 
   if (press) {
-    const frame = Math.floor((time - 2.5) * 3.1) % 4;
+    const frame = Math.floor((time - 2.8) * 3.1) % 4;
     draw(sprites.pressSquat, frame, womanX, feet, 310, 0, 2, 550);
     draw(sprites.manPress, frame, manX, feet + 2, 314);
   } else if (squat) {
-    const frame = Math.floor((time - 8.7) * 3.1) % 4;
+    const frame = Math.floor((time - 9.4) * 3.1) % 4;
     draw(sprites.womanSquat, frame, womanX, feet, 306);
     draw(sprites.pressSquat, frame, manX, feet + 2, 310, 1, 2, 550);
   } else {
-    const frame = Math.floor(seconds * 7) % 4;
-    draw(sprites.womanWalk, frame, womanX, feet, 304);
-    draw(sprites.manWalk, frame, manX, feet + 2, 310);
+    drawWalk(time < 13 ? 'right' : 'left');
   }
 }
 
