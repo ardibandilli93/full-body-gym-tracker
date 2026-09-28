@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
+  Extrapolation,
   interpolate,
   useAnimatedStyle,
   useReducedMotion,
@@ -28,17 +29,23 @@ export type AvatarStageProps = {
 
 const ATHLETES = {
   male: {
-    source: require('../../assets/art/athlete-male.png'),
+    lean: require('../../assets/art/athlete-male-lean.png'),
+    neutral: require('../../assets/art/athlete-male.png'),
+    build: require('../../assets/art/athlete-male-build.png'),
     accent: palette.lime,
     glow: '#95D629',
   },
   female: {
-    source: require('../../assets/art/athlete-female.png'),
+    lean: require('../../assets/art/athlete-female-lean.png'),
+    neutral: require('../../assets/art/athlete-female.png'),
+    build: require('../../assets/art/athlete-female-build.png'),
     accent: '#E8FF80',
     glow: '#C8EB46',
   },
   other: {
-    source: require('../../assets/art/athlete-other.png'),
+    lean: require('../../assets/art/athlete-other-lean.png'),
+    neutral: require('../../assets/art/athlete-other.png'),
+    build: require('../../assets/art/athlete-other-build.png'),
     accent: palette.blue,
     glow: '#437BE8',
   },
@@ -48,10 +55,9 @@ function clamp(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-function bodyShapeProgress(heightCm: number, weightKg: number) {
-  const heightMetres = heightCm / 100;
-  const bmi = weightKg / (heightMetres * heightMetres);
-  return clamp((bmi - 18) / 17);
+function bodyGoalProgress(currentWeightKg: number, goalWeightKg: number) {
+  const percentageChange = (goalWeightKg - currentWeightKg) / Math.max(currentWeightKg, 1);
+  return Math.max(-1, Math.min(1, percentageChange / 0.15));
 }
 
 function goalCopy(currentWeightKg: number, goalWeightKg: number) {
@@ -65,7 +71,7 @@ const HEIGHT_TICKS = [0, 1, 2, 3, 4, 5];
 
 export function AvatarStage({ gender, heightCm, currentWeightKg, goalWeightKg }: AvatarStageProps) {
   const heightProgress = useSharedValue(clamp((heightCm - 140) / 80));
-  const bodyProgress = useSharedValue(bodyShapeProgress(heightCm, goalWeightKg));
+  const bodyProgress = useSharedValue(bodyGoalProgress(currentWeightKg, goalWeightKg));
   const idleProgress = useSharedValue(0);
   const reduceMotion = useReducedMotion();
   const athlete = ATHLETES[gender];
@@ -79,11 +85,11 @@ export function AvatarStage({ gender, heightCm, currentWeightKg, goalWeightKg }:
   }, [heightCm, heightProgress, reduceMotion]);
 
   useEffect(() => {
-    const target = bodyShapeProgress(heightCm, goalWeightKg);
+    const target = bodyGoalProgress(currentWeightKg, goalWeightKg);
     bodyProgress.value = reduceMotion
       ? target
       : withSpring(target, { damping: 19, stiffness: 112, mass: 0.9 });
-  }, [heightCm, goalWeightKg, bodyProgress, reduceMotion]);
+  }, [currentWeightKg, goalWeightKg, bodyProgress, reduceMotion]);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -102,11 +108,23 @@ export function AvatarStage({ gender, heightCm, currentWeightKg, goalWeightKg }:
   }, [idleProgress, reduceMotion]);
 
   const figureStyle = useAnimatedStyle(() => ({
-    height: interpolate(heightProgress.value, [0, 1], [250, 318]),
+    width: interpolate(heightProgress.value, [0, 1], [172, 222]),
+    height: interpolate(heightProgress.value, [0, 1], [258, 333]),
     transform: [
       { translateY: interpolate(idleProgress.value, [0, 1], [0, -4]) },
-      { scaleX: interpolate(bodyProgress.value, [0, 0.5, 1], [0.87, 1, 1.13]) },
     ],
+  }));
+
+  const leanStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(bodyProgress.value, [-1, 0], [1, 0], Extrapolation.CLAMP),
+  }));
+
+  const neutralStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(bodyProgress.value, [-1, 0, 1], [0, 1, 0], Extrapolation.CLAMP),
+  }));
+
+  const buildStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(bodyProgress.value, [0, 1], [0, 1], Extrapolation.CLAMP),
   }));
 
   const auraStyle = useAnimatedStyle(() => ({
@@ -165,7 +183,15 @@ export function AvatarStage({ gender, heightCm, currentWeightKg, goalWeightKg }:
 
         <Animated.View pointerEvents="none" style={[styles.scanLine, { backgroundColor: athlete.accent }, scanStyle]} />
         <Animated.View style={[styles.figure, figureStyle]}>
-          <Image source={athlete.source} style={styles.athleteImage} contentFit="contain" />
+          <Animated.View style={[styles.variantLayer, leanStyle]}>
+            <Image source={athlete.lean} style={styles.athleteImage} contentFit="contain" />
+          </Animated.View>
+          <Animated.View style={[styles.variantLayer, neutralStyle]}>
+            <Image source={athlete.neutral} style={styles.athleteImage} contentFit="contain" />
+          </Animated.View>
+          <Animated.View style={[styles.variantLayer, buildStyle]}>
+            <Image source={athlete.build} style={styles.athleteImage} contentFit="contain" />
+          </Animated.View>
         </Animated.View>
       </View>
 
@@ -332,8 +358,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   figure: {
-    width: 222,
     zIndex: 3,
+  },
+  variantLayer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   athleteImage: {
     width: '100%',
