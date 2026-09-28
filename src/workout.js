@@ -17,6 +17,8 @@ export const sessionFor = (history, key) => Object.hasOwn(history[key] || {}, 's
 export const sessionExercises = session => (plan[session] || []).map(id => exerciseById[id]);
 export const emptySets = exercise => Array.from({ length: exercise.sets }, () => ({ weight: '', reps: '', done: false }));
 export const validNumber = value => { const n = Number(value); return Number.isFinite(n) && n >= 0 ? n : 0; };
+export const hasValidSetValues = set => Number(set?.weight) > 0 && Number(set?.reps) > 0;
+export const isCompletedSet = set => !!set?.done && hasValidSetValues(set);
 export const volume = state => (state?.sets || []).reduce((sum, set) => sum + validNumber(set.weight) * validNumber(set.reps), 0);
 export const hasWorkout = day => Object.values(day?.exercises || {}).some(state => !!state.notes || (state.sets || []).some(set => set.done || set.weight || set.reps));
 export const previousExercise = (history, date, id) => Object.keys(history).filter(key => key < date && history[key]?.exercises?.[id] && hasWorkout({ exercises: { [id]: history[key].exercises[id] } })).sort().reverse().map(key => ({ date: key, state: history[key].exercises[id] }))[0];

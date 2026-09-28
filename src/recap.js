@@ -1,9 +1,7 @@
-import { sessionFor, sessionExercises } from './workout.js';
-
-const comparableSet = set => set.done && Number(set.weight) > 0 && Number(set.reps) > 0;
+import { isCompletedSet, sessionFor, sessionExercises } from './workout.js';
 
 export function averageSetWork(state) {
-  const sets = (state?.sets || []).filter(comparableSet);
+  const sets = (state?.sets || []).filter(isCompletedSet);
   return sets.length ? sets.reduce((sum, set) => sum + Number(set.weight) * Number(set.reps), 0) / sets.length : null;
 }
 
@@ -19,8 +17,8 @@ export function calculateCompletion(history, date, minutes, bodyWeightKg, finish
   if (!day || day.completion) throw new Error('This workout cannot be finished again.');
   const session = sessionFor(history, date);
   if (!session) throw new Error('Choose a workout session first.');
-  const completedSets = sessionExercises(session).flatMap(exercise => day.exercises?.[exercise.id]?.sets || []).filter(set => set.done).length;
-  if (!completedSets) throw new Error('Mark at least one set done first.');
+  const completedSets = sessionExercises(session).flatMap(exercise => day.exercises?.[exercise.id]?.sets || []).filter(isCompletedSet).length;
+  if (!completedSets) throw new Error('Complete at least one set with a valid weight and reps first.');
 
   const comparedTo = previousCompletedSession(history, date);
   const previous = history[comparedTo];

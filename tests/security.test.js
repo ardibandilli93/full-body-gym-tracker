@@ -52,3 +52,12 @@ test('HTML-looking notes remain plain strings, unknown fields are discarded', ()
   assert.equal(result.user_id, undefined);
   assert.equal(result.exercises['leg-press'].notes, item.exercises['leg-press'].notes);
 });
+
+test('normalizes invalid done flags and removes empty workout completions', () => {
+  const item = day();
+  item.exercises['leg-press'].sets = [{ weight: '', reps: '', done: true }];
+  item.completion = { finishedAt: '2026-09-25T17:00:00.000Z', minutes: 30, bodyWeightKg: 70, calories: 123, progressPct: null, comparedTo: null, comparedExercises: 0, completedSets: 1 };
+  const result = validate(item)[date];
+  assert.equal(result.exercises['leg-press'].sets[0].done, false);
+  assert.equal(result.completion, undefined);
+});

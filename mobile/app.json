@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Full Body",
+    "slug": "full-body-gym-tracker",
+    "scheme": "fullbody",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/branding/app-icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fullbody.gymtracker",
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true
+      }
+    },
+    "android": {
+      "package": "com.fullbody.gymtracker",
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0D0B",
+        "foregroundImage": "./assets/branding/app-icon.png"
+      },
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-image",
+      "expo-dev-client",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A0D0B",
+          "image": "./assets/branding/app-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

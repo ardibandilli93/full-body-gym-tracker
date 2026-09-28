@@ -36,10 +36,17 @@ test('first, unchanged, and lower sessions have distinct recaps', () => {
 
 test('completion requires usable inputs and at least one done set', () => {
   const history = { [date]: { session: 'A', exercises: { 'leg-press': state(40, 10, false) } } };
-  assert.throws(() => calculateCompletion(history, date, 30, 70), /Mark at least one set/);
+  assert.throws(() => calculateCompletion(history, date, 30, 70), /at least one set/);
   history[date].exercises['leg-press'].sets[0].done = true;
   assert.throws(() => calculateCompletion(history, date, 0, 70), /duration/);
   assert.throws(() => calculateCompletion(history, date, 30, 0), /body weight/);
   history[date].completion = calculateCompletion(history, date, 30, 70);
   assert.throws(() => calculateCompletion(history, date, 30, 70), /cannot be finished again/);
+});
+
+test('completion rejects done sets without positive weight and reps', () => {
+  for (const [weight, reps] of [['', ''], ['40', ''], ['', '10'], ['0', '10'], ['40', '0']]) {
+    const history = { [date]: { session: 'A', exercises: { 'leg-press': state(weight, reps) } } };
+    assert.throws(() => calculateCompletion(history, date, 30, 70), /valid weight and reps/);
+  }
 });

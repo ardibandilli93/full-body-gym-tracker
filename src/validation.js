@@ -54,8 +54,15 @@ export function validateDay(date, day) {
     result.exercises[id] = { notes, sets: sets.map(set => {
       safeKeys(set);
       if (set.done !== undefined && typeof set.done !== 'boolean') fail();
-      return { weight: numeric(set.weight, 9999), reps: numeric(set.reps, 999), done: set.done ?? false };
+      const weight = numeric(set.weight, 9999);
+      const reps = numeric(set.reps, 999);
+      return { weight, reps, done: !!set.done && Number(weight) > 0 && Number(reps) > 0 };
     }) };
+  }
+  if (result.completion) {
+    const completedSets = Object.values(result.exercises).flatMap(state => state.sets).filter(set => set.done).length;
+    if (completedSets) result.completion.completedSets = completedSets;
+    else delete result.completion;
   }
   if (new TextEncoder().encode(JSON.stringify(result.exercises)).length > 60000) fail();
   return result;
