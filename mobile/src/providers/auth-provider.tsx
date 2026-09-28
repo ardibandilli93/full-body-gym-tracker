@@ -2,6 +2,8 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 
 import { isBackendConfigured, supabase } from '@/lib/supabase';
+import { LEGAL_VERSION } from '@/legal/policies';
+import { appRepository } from '@/repositories/app-repository';
 
 type AuthResult = {
   error: string | null;
@@ -15,9 +17,10 @@ type AuthContextValue = {
   loading: boolean;
   backendConfigured: boolean;
   offlinePreview: boolean;
-  signIn: (email: string, password: string, captchaToken?: string) => Promise<AuthResult>;
-  signUp: (email: string, password: string, captchaToken?: string) => Promise<AuthResult>;
-  resetPassword: (email: string, captchaToken?: string) => Promise<AuthResult>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string) => Promise<AuthResult>;
+  resetPassword: (email: string) => Promise<AuthResult>;
+  deleteAccount: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
   startOfflinePreview: () => void;
 };
@@ -53,15 +56,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string, captchaToken?: string): Promise<AuthResult> => {
+  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     if (!supabase) return { error: 'Add your Supabase keys to enable account sign in.' };
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: { captchaToken } });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     return { error: error?.message ?? null };
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, captchaToken?: string): Promise<AuthResult> => {
+  const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     if (!supabase) return { error: 'Add your Supabase keys to enable account creation.' };
-    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { captchaToken } });
+    const acceptedAt = new Date().toISOString();
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          legal_version: LEGAL_VERSION,
+          terms_accepted_at: acceptedAt,
+          privacy_acknowledged_at: acceptedAt,
+        },
+      },
+    });
 
     const returnedObfuscatedUser = !error
       && Boolean(data.user)
@@ -81,11 +95,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  const resetPassword = useCallback(async (email: string, captchaToken?: string): Promise<AuthResult> => {
+  const resetPassword = useCallback(async (email: string): Promise<AuthResult> => {
     if (!supabase) return { error: 'Add your Supabase keys to enable password reset.' };
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: 'fullbody://reset-password',
-      captchaToken,
     });
     return { error: error?.message ?? null };
   }, []);
@@ -94,6 +107,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setOfflinePreview(false);
     if (supabase) await supabase.auth.signOut();
   }, []);
+
+  const deleteAccount = useCallback(async (): Promise<AuthResult> => {
+    const ownerId = session?.user.id ?? (offlinePreview ? 'local-preview' : null);
+    if (!ownerId) return { error: 'No account is signed in.' };
+
+    if (ownerId !== 'local-preview') {
+      if (!supabase) return { error: 'The account service is unavailable.' };
+      const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+      if (error) return { error: error.message || 'Could not delete the account.' };
+    }
+
+    await appRepository.deleteOwnerData(ownerId);
+    setOfflinePreview(false);
+    if (supabase) await supabase.auth.signOut({ scope: 'local' });
+    setSession(null);
+    return { error: null };
+  }, [session, offlinePreview]);
 
   const value = useMemo<AuthContextValue>(() => ({
     session,
@@ -104,9 +134,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     signIn,
     signUp,
     resetPassword,
+    deleteAccount,
     signOut,
     startOfflinePreview: () => setOfflinePreview(true),
-  }), [session, offlinePreview, loading, signIn, signUp, resetPassword, signOut]);
+  }), [session, offlinePreview, loading, signIn, signUp, resetPassword, deleteAccount, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

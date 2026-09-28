@@ -9,7 +9,6 @@
     "assets": "node scripts/download-exercise-gifs.mjs"
   },
   "dependencies": {
-    "@hcaptcha/react-hcaptcha": "^2.2.0",
     "@supabase/supabase-js": "2.117.2",
     "lottie-web": "^5.13.0",
     "react": "19.3.0",

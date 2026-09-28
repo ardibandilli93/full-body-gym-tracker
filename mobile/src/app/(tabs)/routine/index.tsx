@@ -18,7 +18,7 @@ export default function RoutineScreen() {
       <View style={{ gap: spacing.xs }}>
         <AppText variant="caption" tone="accent">ROUTINE</AppText>
         <AppText variant="title">Design the week.</AppText>
-        <AppText tone="muted">Choose a proven split or open any day to make it yours.</AppText>
+        <AppText tone="muted">Choose a routine template or open any day to make it yours.</AppText>
       </View>
 
       <Card style={{ gap: spacing.sm, borderColor: palette.lime }}>
@@ -30,7 +30,7 @@ export default function RoutineScreen() {
       <View style={{ gap: spacing.sm }}>
         <AppText variant="heading">Training days</AppText>
         {activePlan?.days.map((day, index) => (
-          <Pressable key={day.id} onPress={() => router.push({ pathname: '/(tabs)/routine/[dayId]', params: { dayId: day.id } })}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${day.name}`} key={day.id} onPress={() => router.push({ pathname: '/(tabs)/routine/[dayId]', params: { dayId: day.id } })}>
             <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
               <View style={{ width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: day.isRest ? palette.elevated : `${palette.lime}18` }}>
                 <AppText variant="label" tone={day.isRest ? 'muted' : 'accent'}>{index + 1}</AppText>
@@ -50,7 +50,7 @@ export default function RoutineScreen() {
       <View style={{ gap: spacing.sm }}>
         <AppText variant="heading">Switch template</AppText>
         {routineTemplates.map((template) => (
-          <Pressable key={template.id} onPress={() => void savePlan(cloneRoutine(template))}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Use ${template.name} routine`} key={template.id} onPress={() => void savePlan(cloneRoutine(template))}>
             <Card style={{ gap: spacing.xs }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <AppText variant="label">{template.name}</AppText>

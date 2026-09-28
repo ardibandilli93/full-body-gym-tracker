@@ -86,7 +86,7 @@ export default function WorkoutScreen() {
     <View style={{ flex: 1, backgroundColor: palette.ink }}>
       <AppScreen contentContainerStyle={{ paddingBottom: 170 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <Pressable onPress={() => router.back()} hitSlop={12}><AppText variant="heading">‹</AppText></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}><AppText variant="heading">‹</AppText></Pressable>
           <View style={{ flex: 1 }}><AppText variant="caption" tone="accent">LIVE WORKOUT</AppText><AppText variant="title">{draft.planDayName}</AppText></View>
           <View style={{ alignItems: 'flex-end' }}><AppText variant="heading" tone="accent">{metrics?.completedSets ?? 0}</AppText><AppText variant="caption" tone="muted">OF {totalSets} SETS</AppText></View>
         </View>
@@ -145,6 +145,7 @@ export default function WorkoutScreen() {
                     )}
                     <Pressable
                       accessibilityRole="checkbox"
+                      accessibilityLabel={`${exercise.name}, set ${setIndex + 1}, complete`}
                       accessibilityState={{ checked: set.complete }}
                       onPress={() => patchSet(entry.exerciseId, set.id, { complete: !set.complete })}
                       style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: set.complete ? palette.lime : palette.elevated, borderWidth: 1, borderColor: set.complete ? palette.lime : palette.line }}
@@ -154,7 +155,7 @@ export default function WorkoutScreen() {
                   </View>
                 ))}
               </View>
-              <Pressable onPress={() => addSet(entry.exerciseId)} hitSlop={10}><AppText variant="label" tone="accent">+ Add set</AppText></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Add a set to ${exercise.name}`} onPress={() => addSet(entry.exerciseId)} hitSlop={10}><AppText variant="label" tone="accent">+ Add set</AppText></Pressable>
             </Card>
           );
         })}
@@ -163,6 +164,7 @@ export default function WorkoutScreen() {
           <AppText variant="heading">Calories burned</AppText>
           <AppText tone="muted">Enter the reading from your watch, cardio machine, or gym equipment.</AppText>
           <TextInput
+            accessibilityLabel="Calories burned"
             value={caloriesText}
             onChangeText={setCaloriesText}
             keyboardType="number-pad"
@@ -176,6 +178,7 @@ export default function WorkoutScreen() {
         <Card style={{ gap: spacing.sm }}>
           <AppText variant="label">Session notes</AppText>
           <TextInput
+            accessibilityLabel="Session notes"
             value={draft.notes}
             onChangeText={(notes) => setDraft((current) => current ? { ...current, notes } : current)}
             multiline
@@ -185,7 +188,7 @@ export default function WorkoutScreen() {
             style={{ minHeight: 90, color: palette.text, textAlignVertical: 'top' }}
           />
         </Card>
-        {error ? <AppText tone="danger">{error}</AppText> : null}
+        {error ? <AppText accessibilityLiveRegion="polite" role="alert" tone="danger">{error}</AppText> : null}
       </AppScreen>
 
       <View style={{ position: 'absolute', left: spacing.md, right: spacing.md, bottom: spacing.lg, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: `${palette.panel}F2`, borderWidth: 1, borderColor: palette.line }}>

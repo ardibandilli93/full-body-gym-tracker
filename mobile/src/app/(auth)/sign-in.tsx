@@ -8,7 +8,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
+import { ConsentRow } from '@/components/consent-row';
 import { FormField } from '@/components/form-field';
+import { LegalLink } from '@/components/legal-link';
 import { useAuth } from '@/providers/auth-provider';
 import { palette, radius, spacing } from '@/theme';
 
@@ -21,8 +23,17 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
 
   if (auth.ownerId) return <Redirect href="/" />;
+
+  function switchMode(nextMode: Mode) {
+    setMode(nextMode);
+    setMessage(null);
+    setTermsAccepted(false);
+    setPrivacyAcknowledged(false);
+  }
 
   async function submit() {
     setMessage(null);
@@ -30,8 +41,16 @@ export default function SignInScreen() {
       setMessage('Enter a valid email address.');
       return;
     }
-    if (mode !== 'reset' && password.length < 8) {
-      setMessage('Use at least 8 characters for your password.');
+    if (mode === 'sign-in' && password.length === 0) {
+      setMessage('Enter your password.');
+      return;
+    }
+    if (mode === 'sign-up' && (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password))) {
+      setMessage('Use at least 12 characters with upper-case, lower-case, and a number.');
+      return;
+    }
+    if (mode === 'sign-up' && (!termsAccepted || !privacyAcknowledged)) {
+      setMessage('Accept the Terms and confirm that you read the Privacy Notice before creating an account.');
       return;
     }
     setBusy(true);
@@ -63,6 +82,7 @@ export default function SignInScreen() {
         contentFit="cover"
         contentPosition={{ top: 0 }}
         transition={350}
+        accessible={false}
       />
       <LinearGradient
         colors={['rgba(3,6,4,0.16)', 'rgba(3,6,4,0.6)', '#060907']}
@@ -126,31 +146,56 @@ export default function SignInScreen() {
                       onChangeText={setPassword}
                       secureTextEntry
                       autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
-                      placeholder="At least 8 characters"
+                      placeholder={mode === 'sign-up' ? '12+ characters, mixed case and number' : 'Your password'}
                       style={styles.input}
                     />
                   ) : null}
                   {message ? (
-                    <AppText variant="label" tone={message.toLowerCase().includes('check') || message.includes('way') ? 'accent' : 'danger'}>
+                    <AppText accessibilityLiveRegion="polite" role="alert" variant="label" tone={message.toLowerCase().includes('check') || message.includes('way') ? 'accent' : 'danger'}>
                       {message}
                     </AppText>
                   ) : null}
-                  <AppButton label={buttonLabel} loading={busy} onPress={() => void submit()} />
+                  {mode === 'sign-up' ? (
+                    <View style={styles.consentBlock}>
+                      <ConsentRow
+                        checked={termsAccepted}
+                        onChange={setTermsAccepted}
+                        label="I agree to the Terms and Conditions."
+                      />
+                      <ConsentRow
+                        checked={privacyAcknowledged}
+                        onChange={setPrivacyAcknowledged}
+                        label="I have read the Privacy Notice and understand how my account data is used."
+                      />
+                      <View style={styles.legalLinks}>
+                        <LegalLink document="terms" label="Terms" />
+                        <LegalLink document="privacy" label="Privacy" />
+                        <LegalLink document="cookies" label="Cookies" />
+                        <LegalLink document="refunds" label="Refunds" />
+                      </View>
+                    </View>
+                  ) : null}
+                  <AppButton
+                    label={buttonLabel}
+                    loading={busy}
+                    disabled={mode === 'sign-up' && (!termsAccepted || !privacyAcknowledged)}
+                    onPress={() => void submit()}
+                  />
                 </View>
 
                 <View style={styles.secondaryActions}>
                   {mode === 'sign-in' ? (
-                    <Pressable onPress={() => setMode('reset')} hitSlop={12}>
+                    <Pressable accessibilityRole="button" onPress={() => switchMode('reset')} hitSlop={12}>
                       <AppText variant="label" tone="muted">Forgot password?</AppText>
                     </Pressable>
                   ) : null}
-                  <Pressable onPress={() => setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up')} hitSlop={12}>
+                  <Pressable accessibilityRole="button" onPress={() => switchMode(mode === 'sign-up' ? 'sign-in' : 'sign-up')} hitSlop={12}>
                     <AppText variant="label" tone="accent">
                       {mode === 'sign-up' ? 'Already a member? Sign in' : 'New here? Create an account'}
                     </AppText>
                   </Pressable>
                   {mode === 'reset' ? (
-                    <Pressable onPress={() => setMode('sign-in')} hitSlop={12}>
+                    <Pressable accessibilityRole="button" onPress={() => switchMode('sign-in')} hitSlop={12}>
                       <AppText variant="label">Back to sign in</AppText>
                     </Pressable>
                   ) : null}
@@ -296,6 +341,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   form: {
+    gap: spacing.md,
+  },
+  consentBlock: {
+    gap: spacing.sm,
+    paddingTop: spacing.xs,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   input: {

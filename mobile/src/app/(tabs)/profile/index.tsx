@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Alert, Platform, Pressable, Share, View } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
 import { AppScreen } from '@/components/app-screen';
@@ -9,6 +9,7 @@ import { AppText } from '@/components/app-text';
 import { AvatarStage } from '@/components/avatar-stage';
 import { Card } from '@/components/card';
 import { FormField } from '@/components/form-field';
+import { LegalLink } from '@/components/legal-link';
 import type { UnitSystem } from '@/domain/types';
 import { useApp } from '@/providers/app-provider';
 import { useAuth } from '@/providers/auth-provider';
@@ -20,12 +21,15 @@ function weightLabel(kg: number, units: UnitSystem) {
 
 export default function ProfileScreen() {
   const auth = useAuth();
-  const { profile, activePlan, sessions, updateProfile } = useApp();
+  const app = useApp();
+  const { profile, activePlan, sessions, updateProfile } = app;
   const [name, setName] = useState(profile?.preferredName ?? '');
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(profile?.unitSystem ?? 'metric');
   const [currentWeightKg, setCurrentWeightKg] = useState(profile?.currentWeightKg ?? 75);
   const [goalWeightKg, setGoalWeightKg] = useState(profile?.goalWeightKg ?? 72);
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [accountMessage, setAccountMessage] = useState<string | null>(null);
 
   if (!profile) return null;
 
@@ -38,6 +42,48 @@ export default function ProfileScreen() {
   async function signOut() {
     await auth.signOut();
     router.replace('/(auth)/sign-in');
+  }
+
+  async function exportData() {
+    setAccountMessage(null);
+    try {
+      await Share.share({
+        title: 'Full Body data export',
+        message: JSON.stringify({
+          app: 'Full Body',
+          exportedAt: new Date().toISOString(),
+          profile: app.profile,
+          activePlan: app.activePlan,
+          sessions: app.sessions,
+        }, null, 2),
+      });
+    } catch {
+      setAccountMessage('Your device could not open the share sheet.');
+    }
+  }
+
+  async function deleteAccount() {
+    setDeleting(true);
+    setAccountMessage(null);
+    const result = await auth.deleteAccount();
+    setDeleting(false);
+    if (result.error) {
+      setAccountMessage(result.error);
+      return;
+    }
+    router.replace('/(auth)/sign-in');
+  }
+
+  function requestAccountDeletion() {
+    const warning = 'This permanently deletes your account, profile, routine, and workout history. Export first if you want a copy.';
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${warning}\n\nDelete account and data?`)) void deleteAccount();
+      return;
+    }
+    Alert.alert('Delete account and data?', warning, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete permanently', style: 'destructive', onPress: () => void deleteAccount() },
+    ]);
   }
 
   return (
@@ -64,7 +110,7 @@ export default function ProfileScreen() {
           <AppText variant="label">Display units</AppText>
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             {(['metric', 'imperial'] as UnitSystem[]).map((unit) => (
-              <Pressable key={unit} onPress={() => setUnitSystem(unit)} style={{ flex: 1, height: 50, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: unitSystem === unit ? `${palette.lime}18` : palette.panel, borderWidth: 1, borderColor: unitSystem === unit ? palette.lime : palette.line }}>
+              <Pressable accessibilityRole="radio" accessibilityState={{ selected: unitSystem === unit }} key={unit} onPress={() => setUnitSystem(unit)} style={{ flex: 1, height: 50, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: unitSystem === unit ? `${palette.lime}18` : palette.panel, borderWidth: 1, borderColor: unitSystem === unit ? palette.lime : palette.line }}>
                 <AppText variant="label" tone={unitSystem === unit ? 'accent' : 'primary'}>{unit[0]!.toUpperCase() + unit.slice(1)}</AppText>
               </Pressable>
             ))}
@@ -73,11 +119,11 @@ export default function ProfileScreen() {
 
         <Card style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><AppText variant="label">Current weight</AppText><AppText variant="heading" tone="accent">{weightLabel(currentWeightKg, unitSystem)}</AppText></View>
-          <AppSlider value={currentWeightKg} onValueChange={setCurrentWeightKg} min={40} max={180} step={1} />
+          <AppSlider accessibilityLabel="Current weight in kilograms" value={currentWeightKg} onValueChange={setCurrentWeightKg} min={40} max={180} step={1} />
         </Card>
         <Card style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><AppText variant="label">Goal weight</AppText><AppText variant="heading" tone="accent">{weightLabel(goalWeightKg, unitSystem)}</AppText></View>
-          <AppSlider value={goalWeightKg} onValueChange={setGoalWeightKg} min={40} max={180} step={1} />
+          <AppSlider accessibilityLabel="Goal weight in kilograms" value={goalWeightKg} onValueChange={setGoalWeightKg} min={40} max={180} step={1} />
         </Card>
         <AppButton label={saved ? 'Saved' : 'Save changes'} onPress={() => void save()} />
       </View>
@@ -86,6 +132,23 @@ export default function ProfileScreen() {
         <AppText variant="caption" tone="muted">CURRENT ROUTINE</AppText>
         <AppText variant="heading">{activePlan?.name}</AppText>
         <AppText tone="muted">{activePlan?.days.filter((day) => !day.isRest).length ?? 0} training days planned.</AppText>
+      </Card>
+
+      <Card style={{ gap: spacing.md }}>
+        <View style={{ gap: spacing.xs }}>
+          <AppText variant="caption" tone="accent">PRIVACY & ACCOUNT</AppText>
+          <AppText variant="heading" accessibilityRole="header">You control your data.</AppText>
+          <AppText tone="muted">No advertising or behavioural analytics SDKs are active. Export a readable copy or delete the account and its data.</AppText>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+          <LegalLink document="privacy" label="Privacy" />
+          <LegalLink document="terms" label="Terms" />
+          <LegalLink document="cookies" label="Cookies" />
+          <LegalLink document="refunds" label="Refunds" />
+        </View>
+        <AppButton label="Export my data" variant="secondary" onPress={() => void exportData()} />
+        <AppButton label="Delete account and data" variant="danger" loading={deleting} onPress={requestAccountDeletion} />
+        {accountMessage ? <AppText accessibilityLiveRegion="polite" role="alert" tone="danger">{accountMessage}</AppText> : null}
       </Card>
 
       <AppButton label="Sign out" variant="danger" onPress={() => void signOut()} />

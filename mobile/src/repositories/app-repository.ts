@@ -36,6 +36,16 @@ async function enqueue(
 }
 
 export const appRepository = {
+  async deleteOwnerData(ownerId: string): Promise<void> {
+    const database = await getDatabase();
+    await database.withTransactionAsync(async () => {
+      await database.runAsync('DELETE FROM sync_queue WHERE owner_id = ?', ownerId);
+      await database.runAsync('DELETE FROM workout_sessions WHERE owner_id = ?', ownerId);
+      await database.runAsync('DELETE FROM plans WHERE owner_id = ?', ownerId);
+      await database.runAsync('DELETE FROM profiles WHERE owner_id = ?', ownerId);
+    });
+  },
+
   async loadSnapshot(ownerId: string): Promise<AppSnapshot> {
     const database = await getDatabase();
     const [profileRow, planRow, sessionRows] = await Promise.all([

@@ -9,13 +9,14 @@ type FormFieldProps = TextInputProps & {
   error?: string | null;
 };
 
-export function FormField({ label, error, style, onFocus, onBlur, ...props }: FormFieldProps) {
+export function FormField({ label, error, style, onFocus, onBlur, accessibilityLabel, ...props }: FormFieldProps) {
   const [focused, setFocused] = useState(false);
 
   return (
     <View style={{ gap: spacing.xs }}>
       <AppText variant="label">{label}</AppText>
       <TextInput
+        accessibilityLabel={accessibilityLabel ?? label}
         placeholderTextColor={palette.muted}
         selectionColor={palette.lime}
         style={[
@@ -44,7 +45,7 @@ export function FormField({ label, error, style, onFocus, onBlur, ...props }: Fo
         }}
         {...props}
       />
-      {error ? <AppText variant="caption" tone="danger">{error}</AppText> : null}
+      {error ? <AppText accessibilityLiveRegion="polite" role="alert" variant="caption" tone="danger">{error}</AppText> : null}
     </View>
   );
 }

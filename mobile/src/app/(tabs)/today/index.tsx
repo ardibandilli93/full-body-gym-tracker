@@ -69,7 +69,7 @@ export default function TodayScreen() {
           <AppText variant="caption" tone="muted">{activePlan?.name}</AppText>
         </View>
         {activePlan?.days.map((day) => (
-          <Pressable key={day.id} disabled={day.isRest || day.exerciseIds.length === 0 || Boolean(inProgress)} onPress={() => void begin(day.id)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={day.isRest ? `${day.name}, rest day` : `Start ${day.name}`} accessibilityState={{ disabled: day.isRest || day.exerciseIds.length === 0 || Boolean(inProgress) }} key={day.id} disabled={day.isRest || day.exerciseIds.length === 0 || Boolean(inProgress)} onPress={() => void begin(day.id)}>
             <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, opacity: day.isRest ? 0.55 : 1 }}>
               <View style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: day.isRest ? palette.elevated : `${palette.lime}18` }}>
                 <AppText variant="label" tone={day.isRest ? 'muted' : 'accent'}>{day.shortName.slice(0, 2).toUpperCase()}</AppText>

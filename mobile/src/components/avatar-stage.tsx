@@ -184,13 +184,13 @@ export function AvatarStage({ gender, heightCm, currentWeightKg, goalWeightKg }:
         <Animated.View pointerEvents="none" style={[styles.scanLine, { backgroundColor: athlete.accent }, scanStyle]} />
         <Animated.View style={[styles.figure, figureStyle]}>
           <Animated.View style={[styles.variantLayer, leanStyle]}>
-            <Image source={athlete.lean} style={styles.athleteImage} contentFit="contain" />
+            <Image accessible={false} source={athlete.lean} style={styles.athleteImage} contentFit="contain" />
           </Animated.View>
           <Animated.View style={[styles.variantLayer, neutralStyle]}>
-            <Image source={athlete.neutral} style={styles.athleteImage} contentFit="contain" />
+            <Image accessible={false} source={athlete.neutral} style={styles.athleteImage} contentFit="contain" />
           </Animated.View>
           <Animated.View style={[styles.variantLayer, buildStyle]}>
-            <Image source={athlete.build} style={styles.athleteImage} contentFit="contain" />
+            <Image accessible={false} source={athlete.build} style={styles.athleteImage} contentFit="contain" />
           </Animated.View>
         </Animated.View>
       </View>

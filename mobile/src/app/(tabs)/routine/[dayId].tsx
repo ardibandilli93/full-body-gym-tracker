@@ -37,7 +37,7 @@ export default function EditRoutineDayScreen() {
     <View style={{ flex: 1, backgroundColor: palette.ink, paddingTop: 58 }}>
       <View style={{ paddingHorizontal: spacing.md, gap: spacing.md, paddingBottom: spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <Pressable onPress={() => router.back()} hitSlop={12}><AppText variant="heading">‹</AppText></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} hitSlop={12}><AppText variant="heading">‹</AppText></Pressable>
           <View style={{ flex: 1 }}><AppText variant="caption" tone="accent">EDIT DAY</AppText><AppText variant="title">{day.name}</AppText></View>
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -46,6 +46,7 @@ export default function EditRoutineDayScreen() {
         </View>
         {!isRest ? (
           <TextInput
+            accessibilityLabel="Search exercises"
             value={query}
             onChangeText={setQuery}
             placeholder="Search 30 exercises"
@@ -69,7 +70,7 @@ export default function EditRoutineDayScreen() {
           renderItem={({ item }) => {
             const checked = selected.includes(item.id);
             return (
-              <Pressable onPress={() => setSelected((current) => checked ? current.filter((id) => id !== item.id) : [...current, item.id])}>
+              <Pressable accessibilityRole="checkbox" accessibilityLabel={`Include ${item.name}`} accessibilityState={{ checked }} onPress={() => setSelected((current) => checked ? current.filter((id) => id !== item.id) : [...current, item.id])}>
                 <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderColor: checked ? palette.lime : palette.line }}>
                   <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: checked ? palette.lime : palette.elevated }}>
                     <AppText variant="label" style={{ color: checked ? palette.ink : palette.muted }}>{checked ? '✓' : '+'}</AppText>

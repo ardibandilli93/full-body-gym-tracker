@@ -28,6 +28,8 @@ export function AppButton({ label, variant = 'primary', loading, leading, disabl
   return (
     <AnimatedPressable
       accessibilityRole="button"
+      accessibilityLabel={props.accessibilityLabel ?? label}
+      accessibilityState={{ disabled: Boolean(disabled || loading), busy: Boolean(loading) }}
       disabled={disabled || loading}
       onPressIn={() => { pressed.value = withTiming(1, { duration }); }}
       onPressOut={() => { pressed.value = withTiming(0, { duration }); }}

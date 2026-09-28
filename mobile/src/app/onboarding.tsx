@@ -8,14 +8,17 @@ import { AppSlider } from '@/components/app-slider';
 import { AppText } from '@/components/app-text';
 import { AvatarStage } from '@/components/avatar-stage';
 import { Card } from '@/components/card';
+import { ConsentRow } from '@/components/consent-row';
 import { FormField } from '@/components/form-field';
+import { LegalLink } from '@/components/legal-link';
 import { cloneRoutine, createCustomWeek, routineTemplates } from '@/domain/routines';
 import type { Gender, RoutinePlan, UnitSystem } from '@/domain/types';
+import { LEGAL_VERSION } from '@/legal/policies';
 import { useApp } from '@/providers/app-provider';
 import { useAuth } from '@/providers/auth-provider';
 import { palette, radius, spacing } from '@/theme';
 
-const stepTitles = ['Meet your training self', 'Set your baseline', 'Shape the goal', 'Choose your rhythm'];
+const stepTitles = ['Meet your training self', 'Set your baseline', 'Shape the goal', 'Choose your rhythm', 'Control your data'];
 
 function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   return (
@@ -63,12 +66,14 @@ export default function OnboardingScreen() {
   const [selectedPlan, setSelectedPlan] = useState<RoutinePlan>(routineTemplates[0]!);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [healthConsent, setHealthConsent] = useState(false);
 
   const age = Number(ageText);
   const canContinue = useMemo(() => {
-    if (step === 0) return preferredName.trim().length >= 2 && Number.isInteger(age) && age >= 16 && age <= 100;
+    if (step === 0) return preferredName.trim().length >= 2 && Number.isInteger(age) && age >= 18 && age <= 100;
+    if (step === stepTitles.length - 1) return healthConsent;
     return true;
-  }, [step, preferredName, age]);
+  }, [step, preferredName, age, healthConsent]);
 
   if (!auth.ownerId) return <Redirect href="/(auth)/sign-in" />;
   if (app.profile?.onboardingComplete) return <Redirect href="/(tabs)/today" />;
@@ -86,6 +91,8 @@ export default function OnboardingScreen() {
         heightCm,
         currentWeightKg,
         goalWeightKg,
+        healthConsentVersion: LEGAL_VERSION,
+        healthConsentAt: new Date().toISOString(),
       }, plan);
       router.replace('/(tabs)/today');
     } catch (finishError) {
@@ -97,7 +104,7 @@ export default function OnboardingScreen() {
 
   const footer = (
     <>
-      {error ? <AppText tone="danger">{error}</AppText> : null}
+      {error ? <AppText accessibilityLiveRegion="polite" role="alert" tone="danger">{error}</AppText> : null}
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
         {step > 0 ? <View style={{ flex: 1 }}><AppButton label="Back" variant="secondary" onPress={() => setStep((value) => value - 1)} /></View> : null}
         <View style={{ flex: 2 }}>
@@ -135,7 +142,7 @@ export default function OnboardingScreen() {
               ))}
             </View>
           </View>
-          <FormField label="Age" value={ageText} onChangeText={setAgeText} keyboardType="number-pad" maxLength={3} error={age < 16 ? 'You must be 16 or older to use Full Body.' : null} />
+          <FormField label="Age" value={ageText} onChangeText={setAgeText} keyboardType="number-pad" maxLength={3} error={age < 18 ? 'You must be 18 or older to use Full Body.' : null} />
         </View>
       ) : null}
 
@@ -150,13 +157,13 @@ export default function OnboardingScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <AppText variant="label">Height</AppText><AppText variant="heading" tone="accent">{displayHeight(heightCm, unitSystem)}</AppText>
             </View>
-            <AppSlider value={heightCm} onValueChange={setHeightCm} min={140} max={220} step={1} testID="height-slider" />
+            <AppSlider accessibilityLabel="Height in centimetres" value={heightCm} onValueChange={setHeightCm} min={140} max={220} step={1} testID="height-slider" />
           </Card>
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <AppText variant="label">Current weight</AppText><AppText variant="heading" tone="accent">{displayWeight(currentWeightKg, unitSystem)}</AppText>
             </View>
-            <AppSlider value={currentWeightKg} onValueChange={setCurrentWeightKg} min={40} max={180} step={1} testID="weight-slider" />
+            <AppSlider accessibilityLabel="Current weight in kilograms" value={currentWeightKg} onValueChange={setCurrentWeightKg} min={40} max={180} step={1} testID="weight-slider" />
           </Card>
         </View>
       ) : null}
@@ -168,7 +175,7 @@ export default function OnboardingScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <AppText variant="label">Goal weight</AppText><AppText variant="heading" tone="accent">{displayWeight(goalWeightKg, unitSystem)}</AppText>
             </View>
-            <AppSlider value={goalWeightKg} onValueChange={setGoalWeightKg} min={40} max={180} step={1} testID="goal-weight-slider" />
+            <AppSlider accessibilityLabel="Goal weight in kilograms" value={goalWeightKg} onValueChange={setGoalWeightKg} min={40} max={180} step={1} testID="goal-weight-slider" />
             <AppText tone="muted">
               {goalWeightKg < currentWeightKg ? 'Leaner is the direction. We will track strength while weight moves down.' : goalWeightKg > currentWeightKg ? 'More mass is the direction. Consistent progression will lead the way.' : 'Maintain your weight while building consistency and strength.'}
             </AppText>
@@ -179,7 +186,7 @@ export default function OnboardingScreen() {
       {step === 3 ? (
         <View style={{ gap: spacing.sm }}>
           {routineTemplates.map((plan) => (
-            <Pressable key={plan.id} onPress={() => setSelectedPlan(plan)}>
+            <Pressable accessibilityRole="radio" accessibilityState={{ selected: selectedPlan.id === plan.id }} key={plan.id} onPress={() => setSelectedPlan(plan)}>
               <Card style={{ gap: spacing.xs, borderColor: selectedPlan.id === plan.id ? palette.lime : palette.line }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }}>
                   <AppText variant="heading" style={{ flex: 1 }}>{plan.name}</AppText>
@@ -189,7 +196,7 @@ export default function OnboardingScreen() {
               </Card>
             </Pressable>
           ))}
-          <Pressable onPress={() => setSelectedPlan(createCustomWeek())}>
+          <Pressable accessibilityRole="radio" accessibilityState={{ selected: selectedPlan.isCustom }} onPress={() => setSelectedPlan(createCustomWeek())}>
             <Card style={{ gap: spacing.xs, borderColor: selectedPlan.isCustom ? palette.lime : palette.line }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <AppText variant="heading">Custom Week</AppText><AppText variant="label" tone="accent">FLEXIBLE</AppText>
@@ -197,6 +204,30 @@ export default function OnboardingScreen() {
               <AppText tone="muted">Set every weekday to training or rest, then choose each exercise yourself.</AppText>
             </Card>
           </Pressable>
+        </View>
+      ) : null}
+
+      {step === 4 ? (
+        <View style={{ gap: spacing.md }}>
+          <Card style={{ gap: spacing.sm }}>
+            <AppText variant="heading" accessibilityRole="header">Your fitness data stays focused.</AppText>
+            <AppText>
+              Full Body uses your height, weight, goal, routine, sets, reps, and workout history to build your plan, save progress, and sync it to your account.
+            </AppText>
+            <AppText tone="muted">
+              We do not send this data to advertisers or analytics tools. You can export it or delete your account and associated data from Profile.
+            </AppText>
+          </Card>
+          <ConsentRow
+            checked={healthConsent}
+            onChange={setHealthConsent}
+            label="I explicitly consent to Full Body processing my body measurements and workout records to provide fitness tracking and account sync. I understand that I can withdraw consent by deleting my account and data."
+          />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+            <LegalLink document="privacy" label="Read Privacy Notice" />
+            <LegalLink document="cookies" label="Device storage" />
+          </View>
+          <AppText variant="caption" tone="muted">This consent is separate from the Terms and is never preselected.</AppText>
         </View>
       ) : null}
 

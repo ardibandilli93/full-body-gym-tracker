@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { AppButton } from '@/components/app-button';
 import { AppScreen } from '@/components/app-screen';
@@ -25,6 +26,7 @@ const messages = {
 };
 
 export default function RecapScreen() {
+  const reduceMotion = useReducedMotion();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { sessions } = useApp();
   const session = sessions.find((item) => item.id === id);
@@ -38,7 +40,7 @@ export default function RecapScreen() {
       <View style={{ alignItems: 'center' }}>
         <View style={{ width: 220, height: 220, borderRadius: 110, alignItems: 'center', justifyContent: 'center', backgroundColor: `${palette.lime}0D`, borderWidth: 1, borderColor: `${palette.lime}33` }}>
           <AppText variant="display" tone="accent">✓</AppText>
-          <LottieView source={animations[comparison.mood]} autoPlay loop={false} style={{ position: 'absolute', width: 220, height: 220 }} />
+          <LottieView accessible={false} source={animations[comparison.mood]} autoPlay={!reduceMotion} loop={false} style={{ position: 'absolute', width: 220, height: 220 }} />
         </View>
       </View>
       <View style={{ gap: spacing.sm, alignItems: 'center' }}>

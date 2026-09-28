@@ -13,6 +13,8 @@ export type UserProfile = {
   heightCm: number;
   currentWeightKg: number;
   goalWeightKg: number;
+  healthConsentVersion: string;
+  healthConsentAt: string;
   onboardingComplete: boolean;
   createdAt: string;
   updatedAt: string;
