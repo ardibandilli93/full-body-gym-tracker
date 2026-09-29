@@ -17,6 +17,7 @@ export default function RootLayout() {
               <Stack.Screen name="index" />
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="custom-routine" options={{ gestureEnabled: false }} />
               <Stack.Screen name="legal/[document]" />
               <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
               <Stack.Screen name="workout/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />

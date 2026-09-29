@@ -6,8 +6,7 @@
 
 .training-animation{position:relative}.animation-toggle{position:absolute;right:12px;bottom:8px;width:26px;height:24px;display:grid;place-items:center;padding:0;border:1px solid #425a43;border-radius:7px;background:#101b1de6;color:#c5fa82;font-size:13px;line-height:1}.animation-toggle:hover{background:#2a3b2b}
 .arcade-stage{position:relative;min-width:0;min-height:400px;overflow:hidden;background:#0a0d10 url('/assets/training/pixel/poster.webp') center/cover no-repeat;isolation:isolate}.arcade-stage canvas{display:block;width:100%;height:100%;min-height:400px;object-fit:fill;image-rendering:pixelated;opacity:0}.arcade-stage canvas.is-ready{opacity:1}@media(max-width:650px){.arcade-stage{min-height:265px;height:265px}.arcade-stage canvas{min-height:265px}}
-.header-actions{display:flex;align-items:center;gap:20px}.header-signin,.header-account{background:#c5fa82;color:#0d1518;border:0;border-radius:9px;padding:10px 14px;font-size:12px;font-weight:800}.header-signin span{margin-left:10px}.header-account{background:#1d2b26;color:#c5fa82;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.account-cta p{font-size:12px;color:#9aa9a1;line-height:1.6;margin:0 0 14px}.account-cta button{width:100%;border-radius:9px;border:0;background:#c5fa82;color:#101812;font-size:12px;font-weight:800;padding:11px}.account-cta .account-create{margin-top:7px;color:#c5fa82;background:#202d28;border:1px solid #425a43}
-.auth-page{min-height:100vh;background:#0a0d10;padding:0 clamp(18px,4vw,68px)}.auth-header{max-width:1440px;margin:auto}.auth-back{border:1px solid #35453f;color:#d5e2d7;background:#15201d;border-radius:9px;padding:10px 13px;font-size:12px;font-weight:700}.auth-main{max-width:1100px;min-height:calc(100vh - 90px);display:grid;grid-template-columns:1fr 440px;align-items:center;gap:0;margin:auto;padding:45px 0 70px}.auth-art{position:relative;align-self:stretch;min-height:530px;overflow:hidden;border:1px solid #34463c;border-radius:22px 0 0 22px;background:#121d1f}.auth-art img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}.auth-art:after{content:'';position:absolute;inset:45% 0 0;background:linear-gradient(transparent,#08110fe8)}.auth-art>div{position:absolute;z-index:1;left:40px;bottom:42px}.auth-art strong{font-family:'Space Grotesk',sans-serif;display:block;margin:11px 0;font-size:clamp(35px,4vw,58px);line-height:1;letter-spacing:-.06em}.auth-art p{color:#bed2c1;font-size:13px}.auth-card{background:#141c1d;border:1px solid #35463d;border-left:0;border-radius:0 22px 22px 0;min-height:530px;padding:40px;display:flex;flex-direction:column;justify-content:center}.auth-card h1{font-family:'Space Grotesk',sans-serif;font-size:39px;letter-spacing:-.055em;line-height:1.05;margin:12px 0}.auth-card>p{color:#aab7ae;font-size:13px;line-height:1.6;margin:0 0 25px}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#0e1717;border:1px solid #304039;border-radius:11px;padding:4px;margin-bottom:25px}.auth-tabs button{border:0;background:transparent;color:#9eb0a4;border-radius:7px;padding:10px;font-size:12px;font-weight:800}.auth-tabs button.active{background:#c5fa82;color:#101812}.auth-card form label{display:block;font-size:11px;font-weight:800;color:#cbd9ce;margin-bottom:15px}.auth-card form input{display:block;width:100%;margin-top:8px;border:1px solid #43584b;border-radius:10px;padding:12px 14px;background:#0e1718;color:#f3f6ed;font-size:14px;outline:none}.auth-card form input:focus{border-color:#c5fa82}.password-input{position:relative;display:block}.password-input input{padding-right:70px!important}.password-input button{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:0;color:#c5fa82;font-size:11px;font-weight:800}.captcha-wrap{margin:12px 0;min-height:80px}.auth-submit{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;border-radius:11px;background:#c5fa82;color:#101812;padding:14px 16px;font-size:13px;font-weight:800;margin-top:17px}.auth-submit:disabled{opacity:.55}.auth-error,.auth-notice{border-radius:9px;padding:11px;font-size:12px;line-height:1.4!important;margin:10px 0!important}.auth-error{background:#512d2b;color:#ffd6d0}.auth-notice{background:#244034;color:#d5f7dc}.auth-switch{margin:20px 0 0!important;text-align:center;color:#9eb0a4;font-size:12px!important}.auth-switch button{border:0;background:none;color:#c5fa82;font-size:12px;font-weight:800}@media(max-width:820px){.auth-main{grid-template-columns:1fr;max-width:470px;gap:0;padding:26px 0 40px}.auth-art{min-height:210px;max-height:210px;border-radius:19px 19px 0 0}.auth-art>div{left:22px;bottom:20px}.auth-art strong{font-size:30px}.auth-art p{display:none}.auth-card{border:1px solid #35463d;border-top:0;border-radius:0 0 19px 19px;min-height:0;padding:28px}}@media(max-width:420px){.auth-page{padding:0 15px}.auth-back{font-size:10px}.auth-card h1{font-size:32px}.auth-card{padding:22px}.header-actions{gap:8px}.header-signin{padding:9px 11px}}
+.local-storage-notice{display:flex;align-items:flex-start;gap:12px;margin:18px 0 0;padding:14px 16px;background:#142019;border:1px solid #3f5b42;border-radius:13px;color:#b6c3b8}.local-storage-notice .status-light{margin-top:7px}.local-storage-notice p{margin:0;font-size:12px;line-height:1.6}.local-storage-notice strong{color:#eef5ea}.danger-button{color:#ffaaa0!important;border-color:#70433f!important}.danger-button:hover{background:#3d2422!important}
 
 /* The athletes travel across the open hero backdrop instead of a framed stage. */
 .hero{position:relative;display:flex;align-items:center;min-height:520px;overflow:hidden}
@@ -21,4 +20,45 @@
   .arcade-stage{position:relative;left:auto;right:auto;bottom:auto;width:100%;height:clamp(210px,53vw,320px);aspect-ratio:auto;margin-top:12px}
   .arcade-stage canvas{object-fit:contain;object-position:center bottom}
 }
-.auth-consent{border:1px solid #35453f;border-radius:11px;padding:13px;margin:4px 0 0}.auth-consent legend{color:#dbe8dc;font-size:11px;font-weight:800;padding:0 5px}.auth-consent label{display:flex!important;gap:9px;align-items:flex-start;margin:10px 0!important;font-weight:500!important;line-height:1.45}.auth-consent input{width:18px!important;height:18px;margin:1px 0 0!important;accent-color:#c5fa82}.auth-consent a,.auth-consent p{color:#c5fa82}.auth-consent p{margin:10px 0 0!important;font-size:11px!important}footer nav{margin-top:12px}footer a{color:#a8b6ae;text-decoration:underline;text-underline-offset:3px}
+footer nav{margin-top:12px}footer a{color:#a8b6ae;text-decoration:underline;text-underline-offset:3px}
+
+/* Mobile-first interaction and legibility polish. */
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{text-wrap:balance}
+p{text-wrap:pretty}
+.cal-day,.completion,.session-progress strong,.stat-list strong,.recap-numbers strong{font-variant-numeric:tabular-nums}
+button,.button,.data-buttons label{touch-action:manipulation;transition-property:transform,background-color,border-color,filter;transition-duration:.16s;transition-timing-function:cubic-bezier(.2,0,0,1)}
+button:active:not(:disabled),.button:active,.data-buttons label:active{transform:scale(.96)}
+.calendar-controls button{min-width:40px;height:40px}
+.exercise-actions button,.data-buttons button,.data-buttons label{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+.demo img{outline:1px solid rgba(255,255,255,.1);outline-offset:-1px}
+footer nav{display:flex;align-items:center;justify-content:center;gap:2px}
+footer nav a{display:inline-flex;min-height:40px;align-items:center;padding-inline:5px}
+@media(max-width:700px){
+  .hero h1{letter-spacing:-.055em}
+  .hero-actions{align-items:stretch}
+  .hero-actions .button{min-height:48px}
+  .exercise{border-radius:16px}
+  .exercise-top{min-height:74px}
+  .exercise-body{animation-duration:.18s}
+  .demo-toggle{display:none}
+  .exercise-detail{padding:16px}
+  .set-grid{grid-template-columns:34px minmax(0,1fr) minmax(0,1fr) 44px;gap:6px}
+  .set-line input{min-height:44px;padding:10px 8px;font-size:16px}
+  .done-button{width:44px;height:44px}
+  .finish-button,.finish-card.finished button,.recap-done{min-height:48px}
+}
+@media(max-width:360px){
+  .app-shell{padding-inline:14px}
+  .brand{font-size:13px;gap:9px}
+  .brand-mark{width:40px;height:40px}
+  .header-date{font-size:10px;letter-spacing:.08em}
+  .hero h1{font-size:47px}
+  .hero-actions{flex-direction:column}
+  .hero-actions>span{text-align:center}
+  .panel-head{align-items:flex-start}
+  .calendar-controls{margin-top:-4px}
+  .calendar{padding-inline:5px}
+  .calendar-grid{gap:0}
+  .cal-day{height:40px;min-height:40px;aspect-ratio:auto}
+}

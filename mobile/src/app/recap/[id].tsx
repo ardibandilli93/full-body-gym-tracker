@@ -40,7 +40,7 @@ export default function RecapScreen() {
       <View style={{ alignItems: 'center' }}>
         <View style={{ width: 220, height: 220, borderRadius: 110, alignItems: 'center', justifyContent: 'center', backgroundColor: `${palette.lime}0D`, borderWidth: 1, borderColor: `${palette.lime}33` }}>
           <AppText variant="display" tone="accent">✓</AppText>
-          <LottieView accessible={false} source={animations[comparison.mood]} autoPlay={!reduceMotion} loop={false} style={{ position: 'absolute', width: 220, height: 220 }} />
+          <LottieView source={animations[comparison.mood]} autoPlay={!reduceMotion} loop={false} style={{ position: 'absolute', width: 220, height: 220 }} />
         </View>
       </View>
       <View style={{ gap: spacing.sm, alignItems: 'center' }}>

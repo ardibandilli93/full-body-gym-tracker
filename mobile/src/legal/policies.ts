@@ -1,4 +1,4 @@
-export const LEGAL_VERSION = '2026-09-28';
+export const LEGAL_VERSION = '2026-09-29';
 
 export type LegalDocumentId = 'privacy' | 'terms' | 'cookies' | 'refunds';
 
@@ -17,12 +17,9 @@ export type PolicyDocument = {
 
 const operatorName = process.env.EXPO_PUBLIC_LEGAL_NAME?.trim() || 'Full Body';
 const privacyEmail = process.env.EXPO_PUBLIC_PRIVACY_EMAIL?.trim();
-const postalAddress = process.env.EXPO_PUBLIC_LEGAL_ADDRESS?.trim();
-const contact = privacyEmail
-  ? `${privacyEmail}${postalAddress ? `, ${postalAddress}` : ''}`
-  : 'the support contact published with the app in the App Store or Google Play listing';
+const contact = privacyEmail || 'the support contact published with the app in the App Store or Google Play listing';
 
-export const legalConfigurationComplete = Boolean(privacyEmail && postalAddress && process.env.EXPO_PUBLIC_LEGAL_NAME?.trim());
+export const legalConfigurationComplete = Boolean(privacyEmail && process.env.EXPO_PUBLIC_LEGAL_NAME?.trim());
 
 const privacy: PolicyDocument = {
   id: 'privacy',
@@ -32,8 +29,8 @@ const privacy: PolicyDocument = {
     {
       heading: 'Who is responsible',
       paragraphs: [
-        `${operatorName}, identified by the publisher details in the app-store listing, is responsible for the personal data described here. You can contact us through ${contact}.`,
-        `This notice is version ${LEGAL_VERSION} and applies to the Full Body mobile app and its web build.`,
+        `${operatorName}, an independent individual developer operating the Full Body project, is responsible for the personal data described here. You can contact the developer at ${contact}.`,
+        `This notice is version ${LEGAL_VERSION} and applies to the Full Body mobile app and standalone web tracker.`,
       ],
     },
     {

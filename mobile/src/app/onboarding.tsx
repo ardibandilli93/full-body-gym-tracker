@@ -1,4 +1,4 @@
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -82,7 +82,8 @@ export default function OnboardingScreen() {
     setBusy(true);
     setError(null);
     try {
-      const plan = selectedPlan.isCustom ? createCustomWeek() : cloneRoutine(selectedPlan);
+      const isCustom = selectedPlan.isCustom;
+      const plan = isCustom ? createCustomWeek() : cloneRoutine(selectedPlan);
       await app.completeOnboarding({
         preferredName: preferredName.trim(),
         gender,
@@ -94,7 +95,11 @@ export default function OnboardingScreen() {
         healthConsentVersion: LEGAL_VERSION,
         healthConsentAt: new Date().toISOString(),
       }, plan);
-      router.replace('/(tabs)/today');
+      if (isCustom) {
+        router.replace('/custom-routine?source=onboarding' as Href);
+      } else {
+        router.replace('/(tabs)/today');
+      }
     } catch (finishError) {
       setError(finishError instanceof Error ? finishError.message : 'Could not save onboarding.');
     } finally {
@@ -109,7 +114,7 @@ export default function OnboardingScreen() {
         {step > 0 ? <View style={{ flex: 1 }}><AppButton label="Back" variant="secondary" onPress={() => setStep((value) => value - 1)} /></View> : null}
         <View style={{ flex: 2 }}>
           <AppButton
-            label={step === stepTitles.length - 1 ? 'Build my plan' : 'Continue'}
+            label={step === stepTitles.length - 1 ? selectedPlan.isCustom ? 'Customize my week' : 'Build my plan' : 'Continue'}
             disabled={!canContinue}
             loading={busy}
             onPress={() => step === stepTitles.length - 1 ? void finish() : setStep((value) => value + 1)}
@@ -201,7 +206,7 @@ export default function OnboardingScreen() {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <AppText variant="heading">Custom Week</AppText><AppText variant="label" tone="accent">FLEXIBLE</AppText>
               </View>
-              <AppText tone="muted">Set every weekday to training or rest, then choose each exercise yourself.</AppText>
+              <AppText tone="muted">Continue to the week builder, choose each training day visually, then save your split.</AppText>
             </Card>
           </Pressable>
         </View>

@@ -6,7 +6,6 @@ export const plan = routine.plan;
 export const exerciseById = Object.fromEntries(exercises.map(exercise => [exercise.id, exercise]));
 export const legacyHistoryKey = 'gym-video-workout:sceYELRojak:history:v2';
 export const guestHistoryKey = 'full-body:guest-history:v1';
-export const userHistoryKey = id => `full-body:history:${id}:v1`;
 
 export const dateKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 export const parseDate = key => { const [year, month, day] = key.split('-').map(Number); return new Date(year, month - 1, day); };

@@ -20,8 +20,8 @@ export const routineTemplates: RoutinePlan[] = [
     updatedAt,
     days: [
       day('full-body-a', 'Full Body A', ['leg-press', 'bench-press', 'lat-pulldown', 'lateral-raise', 'cable-crunch']),
-      day('full-body-b', 'Full Body B', ['romanian-deadlift', 'incline-dumbbell-press', 'seated-cable-row', 'dumbbell-biceps-curl', 'pallof-press']),
-      day('full-body-c', 'Full Body C', ['goblet-squat', 'machine-shoulder-press', 'face-pull', 'cable-triceps-pushdown', 'plank']),
+      day('full-body-b', 'Full Body B', ['romanian-deadlift', 'incline-dumbbell-press', 'one-arm-dumbbell-row', 'dumbbell-biceps-curl', 'pallof-press']),
+      day('full-body-c', 'Full Body C', ['goblet-squat', 'dumbbell-shoulder-press', 'assisted-pull-up', 'cable-triceps-pushdown', 'plank']),
     ],
   },
   {
@@ -33,9 +33,9 @@ export const routineTemplates: RoutinePlan[] = [
     updatedAt,
     days: [
       day('push', 'Push', ['bench-press', 'incline-dumbbell-press', 'machine-shoulder-press', 'lateral-raise', 'cable-triceps-pushdown']),
-      day('pull', 'Pull', ['assisted-pull-up', 'seated-cable-row', 'face-pull', 'dumbbell-biceps-curl', 'hammer-curl']),
-      day('legs', 'Legs', ['barbell-back-squat', 'romanian-deadlift', 'leg-press', 'lying-leg-curl', 'standing-calf-raise']),
-      day('arms-core', 'Arms & Core', ['overhead-triceps-extension', 'dumbbell-biceps-curl', 'hammer-curl', 'cable-crunch', 'pallof-press']),
+      day('pull', 'Pull', ['pull-up', 'barbell-bent-over-row', 'seated-cable-row', 'reverse-pec-deck', 'preacher-curl']),
+      day('legs', 'Legs', ['barbell-back-squat', 'romanian-deadlift', 'walking-lunge', 'seated-leg-curl', 'seated-calf-raise']),
+      day('arms-core', 'Arms & Core', ['lying-triceps-extension', 'overhead-triceps-extension', 'dumbbell-biceps-curl', 'hammer-curl', 'cable-crunch']),
     ],
   },
   {
@@ -46,11 +46,11 @@ export const routineTemplates: RoutinePlan[] = [
     isCustom: false,
     updatedAt,
     days: [
-      day('upper-a', 'Upper A', ['bench-press', 'lat-pulldown', 'machine-shoulder-press', 'chest-supported-dumbbell-row', 'cable-triceps-pushdown']),
+      day('upper-a', 'Upper A', ['bench-press', 'lat-pulldown', 'dumbbell-shoulder-press', 'chest-supported-dumbbell-row', 'cable-triceps-pushdown']),
       day('lower-a', 'Lower A', ['barbell-back-squat', 'romanian-deadlift', 'leg-extension', 'lying-leg-curl', 'standing-calf-raise']),
-      day('upper-b', 'Upper B', ['incline-dumbbell-press', 'assisted-pull-up', 'seated-cable-row', 'lateral-raise', 'dumbbell-biceps-curl']),
-      day('lower-b', 'Lower B', ['hack-squat', 'barbell-hip-thrust', 'bulgarian-split-squat', 'lying-leg-curl', 'standing-calf-raise']),
-      day('core', 'Core', ['cable-crunch', 'pallof-press', 'plank', 'side-plank', 'hanging-knee-raise', 'dead-bug']),
+      day('upper-b', 'Upper B', ['dumbbell-bench-press', 'pull-up', 'barbell-bent-over-row', 'lateral-raise', 'preacher-curl']),
+      day('lower-b', 'Lower B', ['hack-squat', 'barbell-hip-thrust', 'walking-lunge', 'seated-leg-curl', 'seated-calf-raise']),
+      day('core', 'Core', ['cable-crunch', 'pallof-press', 'plank', 'side-plank', 'ab-wheel-rollout', 'reverse-crunch']),
     ],
   },
 ];
@@ -61,7 +61,7 @@ export function createCustomWeek(): RoutinePlan {
     id: `custom-${Date.now()}`,
     name: 'My Custom Week',
     description: 'Choose training or rest for every day.',
-    daysPerWeek: 7,
+    daysPerWeek: 0,
     isCustom: true,
     updatedAt: new Date().toISOString(),
     days: weekdayNames.map((name, index) => day(`custom-day-${index + 1}`, name, [], true)),

@@ -12,6 +12,10 @@
       "distribution": "internal"
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_LEGAL_NAME": "Ardi Bandilli",
+        "EXPO_PUBLIC_PRIVACY_EMAIL": "ardibandilli2@gmail.com"
+      },
       "autoIncrement": true
     }
   },

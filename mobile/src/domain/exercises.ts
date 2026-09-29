@@ -31,8 +31,31 @@ export const exercises: Exercise[] = [
   { id: 'side-plank', name: 'Side Plank', muscleGroups: ['Core'], equipment: 'Bodyweight', mode: 'duration', defaultSets: 3, target: '20–45 seconds each side', instructions: 'Stack your shoulders and hips while pushing the floor away.' },
   { id: 'hanging-knee-raise', name: 'Hanging Knee Raise', muscleGroups: ['Core', 'Hip flexors'], equipment: 'Pull-up bar', mode: 'bodyweight_reps', defaultSets: 3, target: '8–15 reps', instructions: 'Curl your pelvis upward and avoid swinging between reps.' },
   { id: 'dead-bug', name: 'Dead Bug', muscleGroups: ['Core'], equipment: 'Bodyweight', mode: 'bodyweight_reps', defaultSets: 3, target: '8–12 reps each side', instructions: 'Press your lower back down while extending opposite arm and leg.' },
+  { id: 'dumbbell-bench-press', name: 'Dumbbell Bench Press', muscleGroups: ['Chest', 'Triceps'], equipment: 'Dumbbells', mode: 'weighted_reps', defaultSets: 3, target: '8–12 reps', instructions: 'Keep your feet planted, lower the dumbbells beside your chest, and press without bouncing.' },
+  { id: 'push-up', name: 'Push-up', muscleGroups: ['Chest', 'Triceps', 'Core'], equipment: 'Bodyweight', mode: 'bodyweight_reps', defaultSets: 3, target: '8–20 reps', instructions: 'Keep your body in one line and lower your chest between your hands.' },
+  { id: 'dumbbell-shoulder-press', name: 'Dumbbell Shoulder Press', muscleGroups: ['Shoulders', 'Triceps'], equipment: 'Dumbbells', mode: 'weighted_reps', defaultSets: 3, target: '8–12 reps', instructions: 'Brace your trunk and press the dumbbells overhead without arching your lower back.' },
+  { id: 'pull-up', name: 'Pull-up', muscleGroups: ['Back', 'Biceps'], equipment: 'Pull-up bar', mode: 'bodyweight_reps', defaultSets: 3, target: '5–10 reps', instructions: 'Start from a controlled hang and drive your elbows down until your chin clears the bar.' },
+  { id: 'barbell-bent-over-row', name: 'Barbell Bent-over Row', muscleGroups: ['Back', 'Biceps', 'Rear delts'], equipment: 'Barbell', mode: 'weighted_reps', defaultSets: 3, target: '6–10 reps', instructions: 'Hinge with a braced torso and pull the bar toward your lower ribs.' },
+  { id: 'one-arm-dumbbell-row', name: 'One-arm Dumbbell Row', muscleGroups: ['Back', 'Biceps'], equipment: 'Dumbbell', mode: 'weighted_reps', defaultSets: 3, target: '8–12 reps each side', instructions: 'Support yourself on a bench and pull the dumbbell toward your hip without twisting.' },
+  { id: 'barbell-deadlift', name: 'Barbell Deadlift', muscleGroups: ['Hamstrings', 'Glutes', 'Back'], equipment: 'Barbell', mode: 'weighted_reps', defaultSets: 3, target: '4–8 reps', instructions: 'Brace before lifting, keep the bar close, and stand tall without leaning back.' },
+  { id: 'walking-lunge', name: 'Walking Lunge', muscleGroups: ['Quads', 'Glutes'], equipment: 'Dumbbells', mode: 'weighted_reps', defaultSets: 3, target: '8–12 reps each side', instructions: 'Take a stable step, lower both knees with control, and drive through the front foot.' },
+  { id: 'seated-leg-curl', name: 'Seated Leg Curl', muscleGroups: ['Hamstrings'], equipment: 'Machine', mode: 'weighted_reps', defaultSets: 3, target: '10–15 reps', instructions: 'Keep your hips down and curl through a full comfortable range without swinging.' },
+  { id: 'seated-calf-raise', name: 'Seated Calf Raise', muscleGroups: ['Calves'], equipment: 'Machine', mode: 'weighted_reps', defaultSets: 4, target: '10–15 reps', instructions: 'Let your heels lower under control, then rise fully and pause at the top.' },
+  { id: 'reverse-pec-deck', name: 'Reverse Pec Deck', muscleGroups: ['Rear delts', 'Upper back'], equipment: 'Machine', mode: 'weighted_reps', defaultSets: 3, target: '12–15 reps', instructions: 'Keep your chest against the pad and open your arms without shrugging.' },
+  { id: 'preacher-curl', name: 'Preacher Curl', muscleGroups: ['Biceps'], equipment: 'EZ-bar', mode: 'weighted_reps', defaultSets: 3, target: '8–12 reps', instructions: 'Keep your upper arms on the pad and lower the bar under control.' },
+  { id: 'lying-triceps-extension', name: 'Lying Triceps Extension', muscleGroups: ['Triceps'], equipment: 'EZ-bar', mode: 'weighted_reps', defaultSets: 3, target: '8–12 reps', instructions: 'Keep your upper arms steady and bend only at the elbows as the bar moves toward your forehead.' },
+  { id: 'ab-wheel-rollout', name: 'Ab Wheel Rollout', muscleGroups: ['Core'], equipment: 'Ab wheel', mode: 'bodyweight_reps', defaultSets: 3, target: '6–12 reps', instructions: 'Brace your trunk and roll only as far as you can without letting your lower back sag.' },
+  { id: 'reverse-crunch', name: 'Reverse Crunch', muscleGroups: ['Core'], equipment: 'Bodyweight', mode: 'bodyweight_reps', defaultSets: 3, target: '10–15 reps', instructions: 'Curl your pelvis toward your ribs with control instead of swinging your legs.' },
 ];
 
 export const exerciseById = new Map(exercises.map((exercise) => [exercise.id, exercise]));
 
-export const exerciseFilters = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Quads', 'Hamstrings', 'Glutes', 'Core'] as const;
+export const exerciseFilters = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'] as const;
+export type ExerciseFilter = (typeof exerciseFilters)[number];
+
+export function exerciseMatchesFilter(exercise: Exercise, filter: ExerciseFilter) {
+  if (filter === 'All') return true;
+  if (filter === 'Arms') return exercise.muscleGroups.some((group) => ['Biceps', 'Triceps', 'Forearms'].includes(group));
+  if (filter === 'Legs') return exercise.muscleGroups.some((group) => ['Quads', 'Hamstrings', 'Glutes', 'Calves'].includes(group));
+  return exercise.muscleGroups.includes(filter);
+}

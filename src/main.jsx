@@ -2,16 +2,26 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import lottie from 'lottie-web/build/player/lottie_light.js';
 import { WorkoutScene } from './WorkoutScene';
-import { AuthPage } from './AuthPage';
-import { supabase, loadCloudHistory, saveCloudDay, deleteCloudDay } from './supabase';
-import { addDays, dateKey, emptySets, exerciseById, format, guestHistoryKey, hasValidSetValues, hasWorkout, isCompletedSet, legacyHistoryKey, parseDate, plan, prettyDate, previousExercise, readHistory, scheduledSession, sessionExercises, sessionFor, updateHistory, userHistoryKey } from './workout';
+import { addDays, dateKey, emptySets, format, guestHistoryKey, hasValidSetValues, hasWorkout, isCompletedSet, legacyHistoryKey, parseDate, plan, prettyDate, previousExercise, readHistory, scheduledSession, sessionExercises, sessionFor, updateHistory } from './workout';
 import './style.css';
 import { readBackup, validateHistory } from './validation.js';
 import { calculateCompletion, recapMood } from './recap.js';
 
 const today = dateKey(new Date());
-const guestInitial = () => { const current = readHistory(guestHistoryKey); return Object.keys(current).length ? current : readHistory(legacyHistoryKey); };
-const authModeFromLocation = () => window.location.pathname === '/sign-in' ? 'login' : window.location.pathname === '/account' ? new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login' : null;
+const priorAccountHistoryKeys = () => Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).filter(item => item && /^full-body:history:[^:]+:v1$/.test(item));
+const guestInitial = () => {
+  const current = readHistory(guestHistoryKey);
+  if (Object.keys(current).length) return current;
+  const legacy = readHistory(legacyHistoryKey);
+  if (Object.keys(legacy).length) return legacy;
+  try {
+    const priorAccountKeys = priorAccountHistoryKeys();
+    if (priorAccountKeys.length !== 1) return {};
+    const priorAccountHistory = readHistory(priorAccountKeys[0]);
+    if (Object.keys(priorAccountHistory).length) localStorage.setItem(guestHistoryKey, JSON.stringify(priorAccountHistory));
+    return priorAccountHistory;
+  } catch { return {}; }
+};
 
 function Calendar({ selected, onSelect, history }) {
   const [month, setMonth] = useState(() => new Date(parseDate(selected).getFullYear(), parseDate(selected).getMonth(), 1));
@@ -27,18 +37,18 @@ function Calendar({ selected, onSelect, history }) {
   </section>;
 }
 
-function ExerciseCard({ exercise, index, session, state, previous, onChange, readOnly }) {
-  const [open, setOpen] = useState(false);
+function ExerciseCard({ exercise, index, session, state, previous, onChange, readOnly, open, onToggle }) {
   const [imageUrl, setImageUrl] = useState(`/${exercise.gif}`);
   const sets = state?.sets?.length ? state.sets : emptySets(exercise);
   const completed = sets.filter(isCompletedSet).length;
   const patch = nextSets => onChange({ sets: nextSets, notes: state?.notes || '' });
+  const bodyId = `exercise-${exercise.id}-${index}`;
   return <article className={`exercise ${open ? 'open' : ''}`}>
-    <button className="exercise-top" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={`${open ? 'Hide' : 'Show'} ${exercise.name} demonstration`}>
-      <span className="exercise-index">{String(index + 1).padStart(2, '0')}</span><span className="exercise-heading"><strong>{exercise.name}</strong><small>{exercise.target} · {exercise.sets} sets × {exercise.reps}</small></span><span className={`completion ${completed === sets.length ? 'complete' : ''}`}>{completed}/{sets.length}</span><span className="demo-toggle">{open ? 'Hide demo' : 'View demo'}</span><span className="chevron">⌄</span>
+    <button className="exercise-top" onClick={onToggle} aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Collapse' : 'Expand'} ${exercise.name}`}>
+      <span className="exercise-index">{String(index + 1).padStart(2, '0')}</span><span className="exercise-heading"><strong>{exercise.name}</strong><small>{exercise.target} · {exercise.sets} sets × {exercise.reps}</small></span><span className={`completion ${completed === sets.length ? 'complete' : ''}`}>{completed}/{sets.length}</span><span className="demo-toggle">{open ? 'Close' : 'Log sets'}</span><span className="chevron">⌄</span>
     </button>
-    <div className="exercise-body">
-      {open && imageUrl && <div className="demo"><img src={imageUrl} alt={`${exercise.name} demonstration`} loading="lazy" onError={() => setImageUrl('')} /><span>DAY {session} · MOVEMENT {index + 1}</span></div>}
+    {open && <div className="exercise-body" id={bodyId}>
+      {imageUrl && <div className="demo"><img src={imageUrl} alt={`${exercise.name} demonstration`} loading="lazy" onError={() => setImageUrl('')} /><span>DAY {session} · MOVEMENT {index + 1}</span></div>}
       <div className="exercise-detail"><div className="exercise-meta"><div><span>Equipment</span><strong>{exercise.equipment}</strong></div><div><span>Last time</span><strong>{previous ? prettyDate(previous.date) : 'First session'}</strong></div></div>
         <p className="logging-hint">Log each set below · {sets.length} sets</p>
         <div className="set-grid set-labels"><span>SET</span><span>WEIGHT · KG</span><span>REPS</span><span>DONE</span></div>
@@ -47,14 +57,8 @@ function ExerciseCard({ exercise, index, session, state, previous, onChange, rea
         <label className="note-label">Notes<input disabled={readOnly} maxLength={2000} value={state?.notes || ''} onChange={event => onChange({ sets, notes: event.target.value })} placeholder="How did it feel?" /></label>
         <details><summary>How to do it</summary><p>{exercise.instructions}</p></details>
       </div>
-    </div>
+    </div>}
   </article>;
-}
-
-function AccountPanel({ user, onError, onSignIn, onSignUp }) {
-  if (!supabase) return <div className="account-note"><span className="status-light"/>Saved on this device · Add Supabase keys to enable sync</div>;
-  if (user) return <div className="account-row"><span className="status-light"/><span>Syncing as <strong>{user.email}</strong></span><button onClick={async () => { const { error } = await supabase.auth.signOut(); if (error) onError(error.message); }}>Sign out</button><button onClick={async () => { if (!window.confirm('Permanently delete your account and all synced workout data? Export a backup first if you want a copy.')) return; const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' }); if (error) return onError(error.message); localStorage.removeItem(userHistoryKey(user.id)); await supabase.auth.signOut({ scope: 'local' }); }}>Delete account</button></div>;
-  return <div className="account-cta"><p>Save every session and pick up your training on any device.</p><button onClick={onSignIn}>Sign in</button><button className="account-create" onClick={onSignUp}>Create account</button></div>;
 }
 
 function RecapModal({ completion, date, onClose }) {
@@ -83,20 +87,15 @@ function RecapModal({ completion, date, onClose }) {
 
 function App() {
   const [selected, setSelected] = useState(today);
-  const [authView, setAuthView] = useState(authModeFromLocation);
-  const openAuth = mode => { window.history.pushState({}, '', mode === 'login' ? '/sign-in' : '/account?mode=register'); setAuthView(mode); window.scrollTo(0, 0); };
-  const closeAuth = () => { window.history.replaceState({}, '', '/'); setAuthView(null); };
   const [history, setHistory] = useState(guestInitial);
   const historyRef = useRef(history);
-  const [user, setUser] = useState(null);
   const [sync, setSync] = useState('Saved on this device');
   const [toast, setToast] = useState('');
   const [recap, setRecap] = useState(null);
   const [duration, setDuration] = useState('');
   const [bodyWeight, setBodyWeight] = useState('');
-  const requestRef = useRef(0);
-  const syncQueue = useRef(Promise.resolve());
-  const key = user ? userHistoryKey(user.id) : guestHistoryKey;
+  const [expandedExerciseId, setExpandedExerciseId] = useState('');
+  const key = guestHistoryKey;
   const session = sessionFor(history, selected);
   const exercises = sessionExercises(session);
   const day = history[selected];
@@ -113,8 +112,8 @@ function App() {
   const previousDay = Object.keys(history).filter(date => date < selected && hasWorkout(history[date]) && sessionFor(history, date) === session).sort().pop();
   const toastTimer = useRef();
   const message = text => { setToast(text); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(''), 2800); };
-  const replaceHistory = (next, storageKey) => { historyRef.current = next; setHistory(next); try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { setSync('Browser storage unavailable'); } };
-  const save = (next, date = selected) => { replaceHistory(next, key); if (user && supabase) { setSync('Syncing…'); syncQueue.current = syncQueue.current.catch(() => {}).then(() => saveCloudDay(user.id, date, next[date])); syncQueue.current.then(() => setSync('Synced to Supabase')).catch(error => setSync(`Sync failed: ${error.message}`)); } else setSync('Saved on this device'); };
+  const replaceHistory = (next, storageKey) => { historyRef.current = next; setHistory(next); try { localStorage.setItem(storageKey, JSON.stringify(next)); setSync('Saved on this device'); return true; } catch { setSync('Browser storage unavailable'); return false; } };
+  const save = next => { replaceHistory(next, key); };
   const changeDay = change => { if (selected !== today || historyRef.current[selected]?.completion) return; save(updateHistory(historyRef.current, selected, change)); };
   const changeExercise = (id, value) => changeDay(day => { day.exercises[id] = value; });
   const finishToday = () => {
@@ -126,92 +125,31 @@ function App() {
     } catch (error) { message(error.message); }
   };
 
-  useEffect(() => {
-    const onPopState = () => setAuthView(authModeFromLocation());
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  useEffect(() => { setExpandedExerciseId(exercises[0]?.id || ''); }, [selected, session]);
 
-  useEffect(() => {
-    if (!supabase) return;
-    let active = true;
-    async function connect(session) {
-      const request = ++requestRef.current;
-      const nextUser = session?.user || null;
-      if (!nextUser) { setUser(null); const guest = guestInitial(); historyRef.current = guest; setHistory(guest); setSync('Saved on this device'); return; }
-      if (window.location.pathname === '/sign-in') {
-        window.history.replaceState({}, '', '/');
-        setAuthView(null);
-      }
-      setUser(nextUser); setSync('Loading cloud history…');
-      const cached = readHistory(userHistoryKey(nextUser.id)); historyRef.current = cached; setHistory(cached);
-      try {
-        const cloud = await loadCloudHistory(nextUser.id);
-        if (!active || request !== requestRef.current) return;
-        const latestLocal = historyRef.current;
-        const merged = { ...latestLocal, ...cloud };
-        for (const [date, local] of Object.entries(latestLocal)) if (!cloud[date] || (local.updatedAt || '') > (cloud[date].updatedAt || '')) merged[date] = local;
-        replaceHistory(merged, userHistoryKey(nextUser.id));
-        setSync('Synced to Supabase');
-        for (const [date, item] of Object.entries(merged)) {
-          if (!active || request !== requestRef.current) return;
-          if (!cloud[date] || item === latestLocal[date]) await saveCloudDay(nextUser.id, date, item);
-        }
-      } catch (error) { if (active) setSync(`Sync failed: ${error.message}`); }
-    }
-    supabase.auth.getSession().then(({ data }) => { if (active) connect(data.session); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => { if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') connect(session); });
-    return () => { active = false; subscription.unsubscribe(); };
-  }, []);
-
-  const importGuest = async () => {
-    if (!user) return;
-    const request = requestRef.current;
-    const guest = guestInitial();
-    const additions = Object.entries(guest).filter(([date]) => !historyRef.current[date]);
-    if (!additions.length) return message('All browser workouts already exist in your account');
-    const merged = { ...historyRef.current, ...Object.fromEntries(additions) };
-    replaceHistory(merged, userHistoryKey(user.id));
-    try {
-      for (const [date, item] of additions) {
-        if (request !== requestRef.current) return;
-        await saveCloudDay(user.id, date, item);
-      }
-      if (request !== requestRef.current) return;
-      setSync('Synced to Supabase'); message(`${additions.length} workout days imported`);
-    } catch (error) { if (request === requestRef.current) setSync(`Sync failed: ${error.message}`); }
-  };
-  const exportData = () => { const blob = new Blob([JSON.stringify({ app: '3-day-full-body-gym-tracker', version: 3, history }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `workouts-${today}.json`; a.click(); URL.revokeObjectURL(url); };
+  const exportData = () => { const blob = new Blob([JSON.stringify({ app: '3-day-full-body-gym-tracker', version: 3, history }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `workouts-${today}.json`; a.hidden = true; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); message('Backup download started'); };
   const importData = async file => {
-    const request = requestRef.current;
     try {
       const imported = await readBackup(file);
-      if (request !== requestRef.current) throw new Error('Account changed. Please import again.');
       const next = validateHistory({ ...historyRef.current, ...imported });
       replaceHistory(next, key);
-      if (user) {
-        // Bound concurrency: a backup must not launch thousands of requests at once.
-        for (const [date, item] of Object.entries(imported)) {
-          if (request !== requestRef.current) return;
-          await saveCloudDay(user.id, date, item);
-        }
-      }
-      if (request === requestRef.current) message('Backup imported');
+      message('Backup imported');
     } catch (error) { message(error.message); }
   };
   const copyPreviousDay = () => { if (!previousDay || (hasWorkout(historyRef.current[selected]) && !window.confirm('Replace the current workout with the previous session?'))) return; changeDay(day => { for (const exercise of exercises) { const previous = historyRef.current[previousDay].exercises?.[exercise.id]; if (previous) day.exercises[exercise.id] = { ...structuredClone(previous), sets: previous.sets.map(set => ({ ...set, done: false })) }; } }); message(`Copied ${prettyDate(previousDay)}`); };
-  const clearDay = async () => { if (selected !== today || historyRef.current[selected]?.completion || !window.confirm(`Clear ${prettyDate(selected)}?`)) return; const next = { ...historyRef.current }; delete next[selected]; replaceHistory(next, key); if (user) { try { syncQueue.current = syncQueue.current.catch(() => {}).then(() => deleteCloudDay(user.id, selected)); await syncQueue.current; setSync('Synced to Supabase'); } catch (error) { setSync(`Sync failed: ${error.message}`); } } message('Day cleared'); };
-  if (authView && supabase && !user) return <AuthPage initialMode={authView} onClose={closeAuth} onSignedIn={closeAuth} />;
+  const clearDay = () => { if (selected !== today || historyRef.current[selected]?.completion || !window.confirm(`Clear ${prettyDate(selected)}?`)) return; const next = { ...historyRef.current }; delete next[selected]; replaceHistory(next, key); message('Day cleared'); };
+  const clearAll = () => { if (!window.confirm('Permanently delete all workout progress saved in this browser? Export a backup first if you want to keep a copy.')) return; let removed = replaceHistory({}, key); try { localStorage.removeItem(legacyHistoryKey); priorAccountHistoryKeys().forEach(item => localStorage.removeItem(item)); } catch { removed = false; setSync('Browser storage unavailable'); } message(removed ? 'All local progress deleted' : 'Progress cleared for now, but browser storage is unavailable'); };
   return <div className="app-shell">
-    <header className="site-header"><a className="brand" href="#top" aria-label="Full Body home"><img className="brand-mark" src="/branding/full-body-header-icon.png" width="44" height="44" alt="" /><span>FULL BODY <small>TRAINING JOURNAL</small></span></a><div className="header-actions"><span className="header-date">{new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>{supabase && !user && <button className="header-signin" onClick={() => openAuth('login')}>Sign in <span>↗</span></button>}{user && <span className="header-account">{user.email}</span>}</div></header>
+    <header className="site-header"><a className="brand" href="#top" aria-label="Full Body home"><img className="brand-mark" src="/branding/full-body-header-icon.png" width="44" height="44" alt="" /><span>FULL BODY <small>TRAINING JOURNAL</small></span></a><span className="header-date">{new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span></header>
     <main id="top">
+      <aside className="local-storage-notice" aria-label="Local progress storage"><span className="status-light" aria-hidden="true"/><p><strong>Your progress is saved locally in this browser.</strong> It does not sync between devices. Clearing browser data can erase it, so export a backup if you want a portable copy.</p></aside>
       <section className="hero"><div className="hero-copy"><span className="eyebrow">THE EVERYDAY STRENGTH PLAN</span><h1>Make every<br/><em>rep count.</em></h1><p>Three focused full body sessions. One clear place to track the work and see yourself grow stronger.</p><div className="hero-actions"><a className="button primary" href="#workout">Start today's session <span>↗</span></a><span>{loggedDays} {loggedDays === 1 ? 'workout' : 'workouts'} logged</span></div></div><WorkoutScene /></section>
       <div className="dashboard"><div className="main-column"><Calendar selected={selected} onSelect={setSelected} history={history}/><section id="workout" className="workout-section"><div className="workout-header"><div><span className="eyebrow">{readOnly ? 'WORKOUT HISTORY · READ ONLY' : 'YOUR SESSION'}</span><h2>{prettyDate(selected)}</h2><p>{session ? `Day ${session} · ${exercises.length} movements` : 'Recovery day · move when you feel ready'}</p></div><select disabled={readOnly} aria-label="Choose workout session" value={session} onChange={event => changeDay(day => { day.session = event.target.value; })}><option value="">Rest day</option><option value="A">Day A</option><option value="B">Day B</option><option value="C">Day C</option></select></div>{previousDay && !readOnly && <button className="copy-day" onClick={copyPreviousDay}>Copy last Day {session} ↗</button>}
-        {session ? <><div className="workout-save-status"><span>{day?.completion ? 'This workout is complete and locked.' : readOnly ? 'Previous dates are for viewing only.' : 'Enter weight and reps. You can edit until you finish today.'}</span><strong role="status">{sync}{!user && supabase ? ' · Sign in to sync across devices' : ''}</strong></div><div className="session-progress"><div><span>{day?.completion ? 'SESSION COMPLETE' : 'SESSION PROGRESS'}</span><strong>{doneCount} of {exercises.reduce((sum, exercise) => sum + (day?.exercises?.[exercise.id]?.sets?.length || exercise.sets), 0)} sets complete</strong></div><div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / Math.max(1, exercises.reduce((sum, exercise) => sum + (day?.exercises?.[exercise.id]?.sets?.length || exercise.sets), 0)) * 100)}%` }}/></div></div>{exercises.map((exercise, index) => <ExerciseCard key={`${selected}-${exercise.id}`} exercise={exercise} index={index} session={session} state={day?.exercises?.[exercise.id]} previous={previousExercise(history, selected, exercise.id)} onChange={value => changeExercise(exercise.id, value)} readOnly={readOnly} />)}
+        {session ? <><div className="workout-save-status"><span>{day?.completion ? 'This workout is complete and locked.' : readOnly ? 'Previous dates are for viewing only.' : 'Enter weight and reps. You can edit until you finish today.'}</span><strong role="status">{sync}</strong></div><div className="session-progress"><div><span>{day?.completion ? 'SESSION COMPLETE' : 'SESSION PROGRESS'}</span><strong>{doneCount} of {exercises.reduce((sum, exercise) => sum + (day?.exercises?.[exercise.id]?.sets?.length || exercise.sets), 0)} sets complete</strong></div><div className="progress-track"><span style={{ width: `${Math.min(100, doneCount / Math.max(1, exercises.reduce((sum, exercise) => sum + (day?.exercises?.[exercise.id]?.sets?.length || exercise.sets), 0)) * 100)}%` }}/></div></div>{exercises.map((exercise, index) => <ExerciseCard key={`${selected}-${exercise.id}`} exercise={exercise} index={index} session={session} state={day?.exercises?.[exercise.id]} previous={previousExercise(history, selected, exercise.id)} onChange={value => changeExercise(exercise.id, value)} readOnly={readOnly} open={expandedExerciseId === exercise.id} onToggle={() => setExpandedExerciseId(current => current === exercise.id ? '' : exercise.id)} />)}
           {day?.completion ? <div className="finish-card finished"><span className="eyebrow">SESSION WRAPPED</span><strong>{day.completion.progressPct === null ? 'First benchmark set' : `${day.completion.progressPct > 0 ? '+' : ''}${day.completion.progressPct}% average progress`} · ≈{day.completion.calories} kcal</strong><button type="button" onClick={() => setRecap({ date: selected, completion: day.completion })}>View recap ↗</button></div> : !readOnly && <div className="finish-card"><span className="eyebrow">FINISH YOUR SESSION</span><h3>Ready to wrap today?</h3><p>Duration and body weight let us estimate calories. Your progress and calorie estimate are calculated when you finish.</p><div className="finish-fields"><label>Workout minutes<input type="number" min="5" max="300" step="1" placeholder="e.g. 45" value={duration} onChange={event => setDuration(event.target.value)} /></label><label>Your weight · kg<input type="number" min="20" max="400" step="0.1" placeholder="e.g. 70" value={bodyWeight} onChange={event => setBodyWeight(event.target.value)} /></label></div><button type="button" className="finish-button" disabled={!doneCount || !duration || !bodyWeight} onClick={finishToday}>Done for today ↗</button></div>}
         </> : <div className="rest-panel"><span>✦</span><h3>Recovery is part of the plan.</h3><p>{readOnly ? 'This date is available for viewing only.' : 'Take today off, or choose a session above if your schedule has changed.'}</p></div>}
       </section></div>
-      <aside className="side-column"><section className="panel overview"><span className="eyebrow">AT A GLANCE</span><h2>{day?.completion ? 'Session complete.' : 'Keep the momentum.'}</h2><div className="stat-list"><div><strong>{day?.completion ? `${day.completion.progressPct > 0 ? '+' : ''}${day.completion.progressPct ?? '—'}${day.completion.progressPct === null ? '' : '%'}` : '—'}</strong><span>Average exercise progress</span></div><div><strong>{day?.completion ? `≈${day.completion.calories}` : '—'}</strong><span>Estimated calories · kcal</span></div><div><strong>{day?.completion?.completedSets ?? '—'}</strong><span>Completed sets</span></div></div><p className="metric-note">Results appear when you press Done for today.</p></section><section className="panel weekly"><span className="eyebrow">WEEKLY PULSE</span><h2>{weekAverage === null ? '—' : `${weekAverage > 0 ? '+' : ''}${weekAverage}%`}</h2><p>Average progress across comparable sessions this week</p><div className="stat-list"><div><strong>≈{format(weekCalories)}</strong><span>Estimated kcal this week</span></div><div><strong>{weekCompletions.length}<small> / 3</small></strong><span>Sessions completed</span></div></div></section><section className="panel account"><span className="eyebrow">YOUR ACCOUNT</span><h2>Keep your progress.</h2><AccountPanel user={user} onError={message} onSignIn={() => openAuth('login')} onSignUp={() => openAuth('register')}/><p className="sync-state">{sync}</p>{user && Object.keys(guestInitial()).length > 0 && <button className="text-button" onClick={importGuest}>Import workouts from this browser ↗</button>}<div className="data-buttons"><button onClick={exportData}>Export backup</button><label>Import backup<input type="file" accept="application/json,.json" onChange={event => { if (event.target.files?.[0]) importData(event.target.files[0]); event.target.value = ''; }}/></label>{!readOnly && <button onClick={clearDay}>Clear today</button>}</div></section><section className="panel routine"><span className="eyebrow">THE ROUTINE</span><h2>Simple by design.</h2>{Object.entries(plan).map(([label, ids]) => <div key={label} className="routine-row"><span>DAY {label}</span><strong>{ids.length} movements</strong></div>)}<p>Train on Monday, Wednesday, and Friday, or choose the days that work for you.</p></section></aside></div>
+      <aside className="side-column"><section className="panel overview"><span className="eyebrow">AT A GLANCE</span><h2>{day?.completion ? 'Session complete.' : 'Keep the momentum.'}</h2><div className="stat-list"><div><strong>{day?.completion ? `${day.completion.progressPct > 0 ? '+' : ''}${day.completion.progressPct ?? '—'}${day.completion.progressPct === null ? '' : '%'}` : '—'}</strong><span>Average exercise progress</span></div><div><strong>{day?.completion ? `≈${day.completion.calories}` : '—'}</strong><span>Estimated calories · kcal</span></div><div><strong>{day?.completion?.completedSets ?? '—'}</strong><span>Completed sets</span></div></div><p className="metric-note">Results appear when you press Done for today.</p></section><section className="panel weekly"><span className="eyebrow">WEEKLY PULSE</span><h2>{weekAverage === null ? '—' : `${weekAverage > 0 ? '+' : ''}${weekAverage}%`}</h2><p>Average progress across comparable sessions this week</p><div className="stat-list"><div><strong>≈{format(weekCalories)}</strong><span>Estimated kcal this week</span></div><div><strong>{weekCompletions.length}<small> / 3</small></strong><span>Sessions completed</span></div></div></section><section className="panel account"><span className="eyebrow">YOUR DATA</span><h2>Keep your progress.</h2><div className="account-note"><span className="status-light"/><span>Stored only in this browser. No account or cloud sync.</span></div><p className="sync-state">Export a backup before clearing browser data or moving devices.</p><div className="data-buttons"><button onClick={exportData}>Export backup</button><label>Import backup<input type="file" accept="application/json,.json" onChange={event => { if (event.target.files?.[0]) importData(event.target.files[0]); event.target.value = ''; }}/></label>{!readOnly && <button onClick={clearDay}>Clear today</button>}<button className="danger-button" onClick={clearAll}>Delete all progress</button></div></section><section className="panel routine"><span className="eyebrow">THE ROUTINE</span><h2>Simple by design.</h2>{Object.entries(plan).map(([label, ids]) => <div key={label} className="routine-row"><span>DAY {label}</span><strong>{ids.length} movements</strong></div>)}<p>Train on Monday, Wednesday, and Friday, or choose the days that work for you.</p></section></aside></div>
     </main><footer>FULL BODY · A SMALL STEP, REPEATED.<nav aria-label="Legal"><a href="/legal.html#privacy">Privacy</a> · <a href="/legal.html#terms">Terms</a> · <a href="/legal.html#cookies">Cookies</a> · <a href="/legal.html#refunds">Refunds</a></nav></footer>{toast && <div className="toast" role="status">{toast}</div>}{recap && <RecapModal key={`${recap.date}-${recap.completion.finishedAt}`} date={recap.date} completion={recap.completion} onClose={() => setRecap(null)} />}
   </div>;
 }

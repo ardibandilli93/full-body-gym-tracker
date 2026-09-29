@@ -1,6 +1,6 @@
 # Full Body compliance and release audit
 
-Audit date: 28 September 2026. Scope: Expo mobile application, its exported web build, the legacy Vite workout tracker, Supabase backend, installed production SDKs, bundled media, user-facing claims, and local browser/device storage.
+Audit date: 28 September 2026. Scope: Expo mobile application, its exported web build, the standalone Vite workout tracker, Supabase mobile backend, installed production SDKs, bundled media, user-facing claims, and local browser/device storage. The standalone web tracker no longer has authentication or backend sync; its progress stays in browser local storage.
 
 This is an engineering and product-compliance review, not a substitute for advice from a lawyer licensed in every launch market. No honest audit can promise zero legal risk. The controls below reduce concrete risks in the current code; the unresolved facts and professional reviews are release gates.
 
@@ -8,7 +8,7 @@ This is an engineering and product-compliance review, not a substitute for advic
 
 **Do not publish yet.** The software controls are substantially improved, but these business facts are missing:
 
-1. The publisher's legal name, trading name, physical/postal address, privacy/support email, country of establishment, company or sole-trader status, registration number, and VAT/tax status.
+1. The developer's legal name, privacy/support email, country of residence, intended personal developer account type, and the private identity/address details required by each app store. The project is currently represented as a free, independent, non-commercial personal project rather than a company or sole-trader business.
 2. The first launch countries and whether the publisher will actively market to users outside them.
 3. Written confirmation that the publisher owns or may commercially use every logo, athlete image, gym background, icon, animation, exercise description, and optional exercise GIF.
 4. A formal trade-mark clearance for **Full Body** and its icon in the launch countries, at least for relevant Nice classes 9, 41, 42, and possibly 44.
@@ -27,7 +27,8 @@ Run `npm run compliance:check` in `mobile/` before a release. It intentionally f
 | Units, height, current and goal weight | SQLite and Supabase | Display units, body projection, goals | Separate explicit health-data consent before collection |
 | Routine and workout records | SQLite and Supabase | Logging, comparison, sync | Separate explicit health-data consent; export and deletion controls |
 | Notes and calorie values | SQLite and Supabase | User-requested session record | Free text length/JSON payload limits; calorie values are user entered |
-| Session token | iOS/Android secure storage; browser auth storage | Keep the user signed in | Necessary storage only; removed on sign-out/deletion |
+| Session token | iOS/Android secure storage | Keep the mobile user signed in | Necessary mobile storage only; removed on sign-out/deletion; the standalone web tracker has no session |
+| Standalone web workout records | Browser local storage | Local workout logging and comparison | Never sent to Full Body; export/import and delete-all controls are provided |
 | Sync queue and local error text | SQLite | Reliable offline sync | Local operational data; deleted with the account |
 
 The app does **not** currently request or collect precise location, contacts, camera, microphone, photos, advertising IDs, biometric identity, HealthKit, Health Connect, wearable data, or payment information. Do not add any of these without a new data-map, purpose/necessity review, policy update, store disclosure, and consent or permission flow where required.
@@ -36,7 +37,7 @@ The app does **not** currently request or collect precise location, contacts, ca
 
 | Service or SDK | Runtime role | Personal-data observation | Decision |
 | --- | --- | --- | --- |
-| Supabase JS/Auth/Postgres/Edge Functions | Authentication, sync, account deletion | Email, account ID, profile and fitness data, normal service/network metadata | Retained; necessary processor; project region is `eu-west-1` Ireland |
+| Supabase JS/Auth/Postgres/Edge Functions | Mobile authentication, sync, account deletion | Email, account ID, profile and fitness data, normal service/network metadata | Retained for mobile only; necessary processor; project region is `eu-west-1` Ireland; removed from the standalone web bundle |
 | Expo / React Native modules | UI, storage, routing, animation, network state | No app analytics SDK found | Retained; review store privacy manifests/data-safety output on each build |
 | Lottie React Native / local JSON | Local recap animation | No network or user data | Retained; honours reduced-motion preference |
 | Reanimated | Local UI animation | No network or user data | Retained; reduced motion used for major animations |
@@ -50,9 +51,9 @@ No fake reviews or testimonials were found. The unsupported phrase “proven spl
 
 ## Consent and user control implemented
 
-- Signup has separate, unticked controls for agreement to Terms and acknowledgement of the Privacy Notice, with direct links to all four policies. Acceptance version and timestamp are stored in Supabase user metadata.
+- Mobile signup has separate, unticked controls for agreement to Terms and acknowledgement of the Privacy Notice, with direct links to all four policies. Acceptance version and timestamp are stored in Supabase user metadata. The standalone web tracker has no signup.
 - Onboarding has a separate, unticked explicit consent for body measurements and workout records. Its version and timestamp are stored in the user profile payload.
-- Necessary mobile/browser storage is explained. No cookie banner is shown because no non-essential cookie, analytics, advertising, or tracking storage is active. Adding any such technology requires a prior opt-in control where applicable.
+- Necessary mobile/browser storage is explained. The web tracker displays a prominent local-only notice and provides backup and delete-all controls. No cookie banner is shown because no non-essential cookie, analytics, advertising, or tracking storage is active. Adding any such technology requires a prior opt-in control where applicable.
 - Profile provides a data export through the platform share sheet and authenticated permanent account deletion.
 - The authenticated `delete-account` Edge Function validates the caller, deletes only that caller's Auth user, and relies on cascading foreign keys to delete profile, routine, old web workout, and mobile workout rows. Local rows and tokens are then removed.
 - A standalone `/delete-account.html` resource gives store-review and users a web path to the deletion flow.
@@ -90,7 +91,7 @@ Before submission, complete Apple App Privacy labels, Google Play Data Safety, G
 
 ## Business, intellectual property, and licensing
 
-- **Business identity:** configure the three `EXPO_PUBLIC_LEGAL_*` values, update the public static policy, ensure the store publisher and invoices use the same real entity, and check local company, tax, VAT, insurance, and consumer-contact requirements. The code cannot establish these facts.
+- **Developer identity:** the public notices identify Ardi Bandilli as the independent individual developer and use `ardibandilli2@gmail.com` for privacy and support. The mobile build requires `EXPO_PUBLIC_LEGAL_NAME` and `EXPO_PUBLIC_PRIVACY_EMAIL`. Keep private app-store identity and address records accurate; reassess business, tax, trading-disclosure, insurance, and consumer requirements before monetising or operating commercially.
 - **Trade mark:** a preliminary official-web search is not clearance. “Full Body” is descriptive and crowded in fitness, which creates both conflict risk and weak exclusivity. Obtain a professional similarity search covering words, logos, app-store common-law use, domains, and relevant classes before spending on launch.
 - **App copyright:** the prior `mobile/LICENSE` incorrectly carried Expo's copyright as though it licensed the app. It now identifies the app as proprietary and separates third-party rights. Confirm the real copyright owner and replace “Full Body” with that legal owner if different.
 - **Dependencies:** the installed direct production packages report MIT licences except `lottie-react-native`, which reports Apache-2.0. Preserve complete licence texts, copyright notices, and any required notices in distributed builds. Generate a fresh full transitive SBOM/licence report for every release; the current direct-package review is not a permanent clearance.
@@ -99,7 +100,8 @@ Before submission, complete Apple App Privacy labels, Google Play Data Safety, G
 
 ## Release checklist
 
-- [ ] Supply and configure the real legal entity, address, privacy email, country, registration/tax details, and store support contact.
+- [x] Configure the public individual developer name and privacy/support email.
+- [ ] Verify the private legal name, address, country, and contact details required by Apple and Google, and confirm the appropriate non-trader/personal declarations for each launch territory.
 - [ ] Choose launch countries and obtain local legal review for privacy, health-data consent, terms, and consumer law.
 - [ ] Sign/review Supabase's DPA and subprocessor/transfer terms; document retention and backup deletion periods.
 - [ ] Complete a DPIA/health-data risk assessment, record of processing, rights-request procedure, retention schedule, and breach plan.

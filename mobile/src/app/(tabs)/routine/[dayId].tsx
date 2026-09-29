@@ -5,6 +5,7 @@ import { FlatList, Pressable, TextInput, View } from 'react-native';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
+import { ExerciseThumbnail } from '@/components/exercise-thumbnail';
 import { exercises } from '@/domain/exercises';
 import { useApp } from '@/providers/app-provider';
 import { palette, radius, spacing } from '@/theme';
@@ -49,7 +50,7 @@ export default function EditRoutineDayScreen() {
             accessibilityLabel="Search exercises"
             value={query}
             onChangeText={setQuery}
-            placeholder="Search 30 exercises"
+            placeholder={`Search ${exercises.length} exercises`}
             placeholderTextColor={palette.muted}
             selectionColor={palette.lime}
             style={{ height: 48, borderRadius: radius.md, paddingHorizontal: spacing.md, color: palette.text, backgroundColor: palette.panel, borderWidth: 1, borderColor: palette.line }}
@@ -71,12 +72,16 @@ export default function EditRoutineDayScreen() {
             const checked = selected.includes(item.id);
             return (
               <Pressable accessibilityRole="checkbox" accessibilityLabel={`Include ${item.name}`} accessibilityState={{ checked }} onPress={() => setSelected((current) => checked ? current.filter((id) => id !== item.id) : [...current, item.id])}>
-                <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderColor: checked ? palette.lime : palette.line }}>
+                <Card style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderColor: checked ? palette.lime : palette.line }}>
+                  <ExerciseThumbnail exerciseId={item.id} size={76} />
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <AppText variant="label">{item.name}</AppText>
+                    <AppText variant="caption" tone="muted">{item.muscleGroups.join(' · ')}</AppText>
+                    <AppText variant="caption" tone="accent">{item.equipment} · {item.target}</AppText>
+                  </View>
                   <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: checked ? palette.lime : palette.elevated }}>
                     <AppText variant="label" style={{ color: checked ? palette.ink : palette.muted }}>{checked ? '✓' : '+'}</AppText>
                   </View>
-                  <View style={{ flex: 1 }}><AppText variant="label">{item.name}</AppText><AppText variant="caption" tone="muted">{item.muscleGroups.join(' · ')} · {item.equipment}</AppText></View>
-                  <AppText variant="caption" tone="accent">{item.target}</AppText>
                 </Card>
               </Pressable>
             );

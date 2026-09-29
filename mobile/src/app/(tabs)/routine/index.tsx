@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
@@ -6,7 +6,7 @@ import { AppScreen } from '@/components/app-screen';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
 import { exerciseById } from '@/domain/exercises';
-import { cloneRoutine, createCustomWeek, routineTemplates } from '@/domain/routines';
+import { cloneRoutine, routineTemplates } from '@/domain/routines';
 import { useApp } from '@/providers/app-provider';
 import { palette, radius, spacing } from '@/theme';
 
@@ -60,7 +60,7 @@ export default function RoutineScreen() {
             </Card>
           </Pressable>
         ))}
-        <AppButton label="Create a custom week" variant="secondary" onPress={() => void savePlan(createCustomWeek())} />
+        <AppButton label="Build a custom split" variant="secondary" onPress={() => router.push('/custom-routine?source=routine' as Href)} />
       </View>
     </AppScreen>
   );
