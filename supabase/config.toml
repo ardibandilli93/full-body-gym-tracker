@@ -371,6 +371,11 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+# This function validates the caller's user JWT inside the handler. Disable the
+# legacy gateway JWT check so calls can use the new publishable API key format.
+[functions.delete-account]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

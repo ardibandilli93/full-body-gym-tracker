@@ -31,7 +31,8 @@ button,.button,.data-buttons label{touch-action:manipulation;transition-property
 button:active:not(:disabled),.button:active,.data-buttons label:active{transform:scale(.96)}
 .calendar-controls button{min-width:40px;height:40px}
 .exercise-actions button,.data-buttons button,.data-buttons label{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
-.demo img{outline:1px solid rgba(255,255,255,.1);outline-offset:-1px}
+.demo{overflow:hidden}
+.demo img{display:block;min-width:0;min-height:0;max-width:100%;max-height:100%;outline:1px solid rgba(255,255,255,.1);outline-offset:-1px}
 footer nav{display:flex;align-items:center;justify-content:center;gap:2px}
 footer nav a{display:inline-flex;min-height:40px;align-items:center;padding-inline:5px}
 @media(max-width:700px){
@@ -41,6 +42,7 @@ footer nav a{display:inline-flex;min-height:40px;align-items:center;padding-inli
   .exercise{border-radius:16px}
   .exercise-top{min-height:74px}
   .exercise-body{animation-duration:.18s}
+  .demo{height:170px}
   .demo-toggle{display:none}
   .exercise-detail{padding:16px}
   .set-grid{grid-template-columns:34px minmax(0,1fr) minmax(0,1fr) 44px;gap:6px}
@@ -48,6 +50,7 @@ footer nav a{display:inline-flex;min-height:40px;align-items:center;padding-inli
   .done-button{width:44px;height:44px}
   .finish-button,.finish-card.finished button,.recap-done{min-height:48px}
 }
+@media(max-width:420px){.demo{height:150px}}
 @media(max-width:360px){
   .app-shell{padding-inline:14px}
   .brand{font-size:13px;gap:9px}

@@ -14,6 +14,23 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+type SupabaseKeyMapVariable = 'SUPABASE_PUBLISHABLE_KEYS' | 'SUPABASE_SECRET_KEYS';
+
+function getSupabaseKey(variable: SupabaseKeyMapVariable, name = 'default') {
+  const rawKeys = Deno.env.get(variable);
+  if (!rawKeys) return null;
+
+  try {
+    const keys: unknown = JSON.parse(rawKeys);
+    if (!keys || typeof keys !== 'object' || Array.isArray(keys)) return null;
+
+    const key = (keys as Record<string, unknown>)[name];
+    return typeof key === 'string' && key.length > 0 ? key : null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (request: Request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return json(405, { error: 'Method not allowed' });
@@ -22,18 +39,18 @@ Deno.serve(async (request: Request) => {
   if (!authorization) return json(401, { error: 'Authentication required' });
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) return json(503, { error: 'Account service unavailable' });
+  const publishableKey = getSupabaseKey('SUPABASE_PUBLISHABLE_KEYS');
+  const secretKey = getSupabaseKey('SUPABASE_SECRET_KEYS');
+  if (!supabaseUrl || !publishableKey || !secretKey) return json(503, { error: 'Account service unavailable' });
 
-  const caller = createClient(supabaseUrl, anonKey, {
+  const caller = createClient(supabaseUrl, publishableKey, {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { data: { user }, error: userError } = await caller.auth.getUser();
   if (userError || !user) return json(401, { error: 'Authentication required' });
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
+  const admin = createClient(supabaseUrl, secretKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { error: deletionError } = await admin.auth.admin.deleteUser(user.id);

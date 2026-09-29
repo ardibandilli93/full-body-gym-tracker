@@ -6,4 +6,3 @@ dist/
 .env.*
 !.env.example
 supabase/.temp/
-public/assets/exercises/*.gif
